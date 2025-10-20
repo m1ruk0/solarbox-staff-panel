@@ -1,5 +1,5 @@
-// API URL
-const API_URL = window.location.origin + '/api';
+// API URL - Google Apps Script
+const API_URL = 'https://script.google.com/macros/s/AKfycbzu3UtirQ5Gjsw3zCJpL24P3h4dOIy0dEc3z48FniEa9Euawceq9z7Fo5HPUErFrOKyXA/exec';
 
 let allApplications = [];
 let currentApplication = null;
@@ -38,7 +38,7 @@ document.addEventListener('DOMContentLoaded', () => {
 // Загрузка заявок
 async function loadApplications() {
     try {
-        const response = await fetch(`${API_URL}/applications`);
+        const response = await fetch(`${API_URL}?action=getApplications`);
         const data = await response.json();
         
         if (data.success) {
@@ -204,10 +204,15 @@ async function approveApplication() {
     }
     
     try {
-        const response = await fetch(`${API_URL}/applications/${currentApplication.id}/approve`, {
+        const response = await fetch(API_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ position, comment })
+            body: JSON.stringify({
+                action: 'approve',
+                rowId: currentApplication.id,
+                position: position,
+                comment: comment
+            })
         });
         
         const data = await response.json();
@@ -232,10 +237,14 @@ async function rejectApplication() {
     const comment = document.getElementById('decisionComment').value.trim();
     
     try {
-        const response = await fetch(`${API_URL}/applications/${currentApplication.id}/reject`, {
+        const response = await fetch(API_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ comment })
+            body: JSON.stringify({
+                action: 'reject',
+                rowId: currentApplication.id,
+                comment: comment
+            })
         });
         
         const data = await response.json();
