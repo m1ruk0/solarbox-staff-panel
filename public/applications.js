@@ -1,5 +1,5 @@
 // API URL - Google Apps Script
-const API_URL = 'https://script.google.com/macros/s/AKfycbzu3UtirQ5Gjsw3zCJpL24P3h4dOIy0dEc3z48FniEa9Euawceq9z7Fo5HPUErFrOKyXA/exec';
+const API_URL = 'https://script.google.com/macros/s/AKfycbyvHW7ILcsDLLgb_y9EtRRHQ0JipLHSBMQGMOuwnIpGUA5DpyQK7M_JbJnleOyn4AIWyg/exec';
 
 let allApplications = [];
 let currentApplication = null;

@@ -16,10 +16,13 @@ function doGet(e) {
     return getApplications();
   }
   
-  return ContentService.createTextOutput(JSON.stringify({
+  const output = ContentService.createTextOutput(JSON.stringify({
     success: false,
     error: 'Unknown action'
-  })).setMimeType(ContentService.MimeType.JSON);
+  }));
+  
+  output.setMimeType(ContentService.MimeType.JSON);
+  return output;
 }
 
 // Обработка POST запросов
