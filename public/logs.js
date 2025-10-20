@@ -4,21 +4,21 @@ const API_URL = window.location.origin + '/api';
 let allLogs = [];
 
 // Проверка авторизации и прав
-const userDiscord = localStorage.getItem('userDiscord');
-const userPosition = localStorage.getItem('userPosition');
-
-if (!userDiscord) {
+const userStr = localStorage.getItem('user');
+if (!userStr) {
     window.location.href = 'login.html';
 }
 
+const currentUser = JSON.parse(userStr);
+
 // Только OWNER может видеть логи
-if (userPosition !== 'OWNER') {
+if (currentUser.position !== 'OWNER') {
     alert('У вас нет доступа к логам!');
     window.location.href = 'index.html';
 }
 
 // Отображение информации о пользователе
-document.getElementById('userInfo').textContent = `${userDiscord} (${userPosition})`;
+document.getElementById('userInfo').textContent = `${currentUser.discord} (${currentUser.position})`;
 
 // Загрузка логов
 document.addEventListener('DOMContentLoaded', () => {

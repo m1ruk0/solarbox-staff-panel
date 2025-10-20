@@ -5,18 +5,18 @@ let allArchive = [];
 let currentFilter = 'all';
 
 // Проверка авторизации
-const userDiscord = localStorage.getItem('userDiscord');
-const userPosition = localStorage.getItem('userPosition');
-
-if (!userDiscord) {
+const userStr = localStorage.getItem('user');
+if (!userStr) {
     window.location.href = 'login.html';
 }
 
+const currentUser = JSON.parse(userStr);
+
 // Отображение информации о пользователе
-document.getElementById('userInfo').textContent = `${userDiscord} (${userPosition})`;
+document.getElementById('userInfo').textContent = `${currentUser.discord} (${currentUser.position})`;
 
 // Показать логи только для OWNER
-if (userPosition === 'OWNER') {
+if (currentUser.position === 'OWNER') {
     document.getElementById('logsLink').classList.remove('hidden');
 }
 

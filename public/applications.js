@@ -213,7 +213,8 @@ async function approveApplication() {
     
     try {
         // Получаем Discord модератора из localStorage
-        const moderator = localStorage.getItem('userDiscord') || 'Неизвестный';
+        const userStr = localStorage.getItem('user');
+        const moderator = userStr ? JSON.parse(userStr).discord : 'Неизвестный';
         
         const response = await fetch(`${API_URL}/applications/${currentApplication.id}/approve`, {
             method: 'POST',
@@ -244,7 +245,8 @@ async function rejectApplication() {
     
     try {
         // Получаем Discord модератора из localStorage
-        const moderator = localStorage.getItem('userDiscord') || 'Неизвестный';
+        const userStr = localStorage.getItem('user');
+        const moderator = userStr ? JSON.parse(userStr).discord : 'Неизвестный';
         
         const response = await fetch(`${API_URL}/applications/${currentApplication.id}/reject`, {
             method: 'POST',
