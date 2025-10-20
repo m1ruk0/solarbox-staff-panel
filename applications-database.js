@@ -118,23 +118,54 @@ class ApplicationsDatabase {
     }
   }
 
-  // Удалить заявку из таблицы (очищаем строку)
+  // Удалить заявку из таблицы (физическое удаление строки)
   async deleteApplication(rowId) {
     if (!this.initialized) {
       await this.initialize();
     }
 
     try {
-      // Очищаем всю строку
-      await this.sheets.spreadsheets.values.clear({
+      // Получаем информацию о таблице
+      const sheetMetadata = await this.sheets.spreadsheets.get({
         spreadsheetId: this.spreadsheetId,
-        range: `${this.sheetName}!A${rowId}:Z${rowId}`
+        fields: 'sheets(properties(sheetId,title))'
+      });
+      
+      // Находим нужный лист по названию
+      const sheet = sheetMetadata.data.sheets.find(
+        s => s.properties.title === this.sheetName
+      );
+      
+      if (!sheet) {
+        throw new Error(`Лист "${this.sheetName}" не найден`);
+      }
+      
+      const sheetId = sheet.properties.sheetId;
+      
+      console.log(`🔍 Удаляем строку ${rowId} с листа "${this.sheetName}" (sheetId: ${sheetId})`);
+      
+      // Физически удаляем строку
+      await this.sheets.spreadsheets.batchUpdate({
+        spreadsheetId: this.spreadsheetId,
+        resource: {
+          requests: [{
+            deleteDimension: {
+              range: {
+                sheetId: sheetId,
+                dimension: 'ROWS',
+                startIndex: parseInt(rowId) - 1, // API использует 0-индексацию
+                endIndex: parseInt(rowId)
+              }
+            }
+          }]
+        }
       });
 
       console.log(`✅ Заявка удалена (строка ${rowId})`);
       return true;
     } catch (error) {
-      console.error('Ошибка удаления заявки:', error.message);
+      console.error('Ошибка удаления заявки:', error);
+      console.error('Детали:', error.message);
       return false;
     }
   }
