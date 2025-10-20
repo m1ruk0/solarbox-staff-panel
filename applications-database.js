@@ -4,8 +4,8 @@ const { google } = require('googleapis');
 class ApplicationsDatabase {
   constructor() {
     this.sheets = null;
-    // Используем отдельную таблицу для заявок или основную
-    this.spreadsheetId = process.env.APPLICATIONS_SHEET_ID || process.env.GOOGLE_SHEET_ID;
+    // ID таблицы Google Sheets
+    this.spreadsheetId = process.env.GOOGLE_SHEET_ID;
     this.initialized = false;
     this.sheetName = 'Заявки'; // ✅ Название листа с заявками
   }
