@@ -100,9 +100,9 @@ function renderApplications(applications) {
                     <div class="flex items-start justify-between mb-4">
                         <div class="flex-1">
                             <div class="flex items-center gap-3 mb-2">
-                                <h3 class="text-xl font-bold text-gray-800">
-                                    <i class="fab fa-discord text-indigo-600 mr-2"></i>
-                                    ${app.discord}
+                                <h3 class="text-2xl font-bold text-gray-900">
+                                    <i class="fas fa-gamepad text-green-600 mr-2"></i>
+                                    ${app.minecraft || app.allFields['Minecraft никнейм'] || 'Неизвестно'}
                                 </h3>
                                 <span class="badge ${
                                     app.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
@@ -114,9 +114,9 @@ function renderApplications(applications) {
                                       '❌ Отклонено'}
                                 </span>
                             </div>
-                            <p class="text-gray-600 mb-3">
-                                <i class="fas fa-cube text-green-600 mr-2"></i>
-                                <strong>Minecraft:</strong> ${app.minecraft}
+                            <p class="text-gray-500 text-sm mb-3">
+                                <i class="fab fa-discord text-indigo-500 mr-2"></i>
+                                ${app.discord || app.allFields['Discord'] || 'Неизвестно'}
                             </p>
                         </div>
                         <div class="text-right text-sm text-gray-500">

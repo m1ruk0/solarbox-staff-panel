@@ -209,8 +209,14 @@ function renderStaff(staff) {
                 <div class="staff-card">
                     <div class="flex items-center justify-between mb-4">
                         <div>
-                            <h3 class="text-xl font-bold text-gray-800">${member.discord}</h3>
-                            <p class="text-gray-600">${member.minecraft}</p>
+                            <h3 class="text-2xl font-bold text-gray-900 flex items-center gap-2">
+                                <i class="fas fa-gamepad text-green-600"></i>
+                                ${member.minecraft}
+                            </h3>
+                            <p class="text-gray-500 text-sm flex items-center gap-2 mt-1">
+                                <i class="fab fa-discord text-indigo-500"></i>
+                                ${member.discord}
+                            </p>
                         </div>
                         <div class="flex flex-col items-end gap-2">
                             ${getRoleBadge(member.position)}

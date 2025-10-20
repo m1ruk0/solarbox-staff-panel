@@ -5,6 +5,7 @@ const path = require('path');
 const staffDB = require('./staff-database-supabase');
 const applicationsDB = require('./applications-database'); // Google Sheets для заявок!
 const passwordsDB = require('./passwords-database-supabase');
+const logsDB = require('./logs-database-supabase');
 const { hasPermission, canPromoteTo, getAvailablePositions } = require('./roles');
 
 const app = express();
@@ -39,11 +40,12 @@ app.get('/api/staff', async (req, res) => {
 // Добавить сотрудника
 app.post('/api/staff', async (req, res) => {
   try {
-    const { discord, minecraft, position } = req.body;
+    const { discord, minecraft, position, moderator } = req.body;
     
     const success = await staffDB.addStaff(discord, minecraft, position);
     
     if (success) {
+      await logsDB.addLog('Добавлен сотрудник', moderator || 'Система', discord, `Должность: ${position}`);
       res.json({ success: true, message: 'Сотрудник добавлен' });
     } else {
       res.status(400).json({ success: false, error: 'Не удалось добавить сотрудника' });
@@ -58,11 +60,12 @@ app.post('/api/staff', async (req, res) => {
 app.put('/api/staff/:discord/position', async (req, res) => {
   try {
     const { discord } = req.params;
-    const { position } = req.body;
+    const { position, moderator } = req.body;
     
     const success = await staffDB.updatePosition(discord, position);
     
     if (success) {
+      await logsDB.addLog('Изменена должность', moderator || 'Система', discord, `Новая должность: ${position}`);
       res.json({ success: true, message: 'Должность обновлена' });
     } else {
       res.status(404).json({ success: false, error: 'Сотрудник не найден' });
@@ -134,7 +137,7 @@ app.put('/api/staff/:discord/vacation', async (req, res) => {
 app.delete('/api/staff/:discord', async (req, res) => {
   try {
     const { discord } = req.params;
-    const { reason } = req.body;
+    const { reason, moderator } = req.body;
     
     const success = await staffDB.deleteStaff(discord, reason);
     
@@ -418,10 +421,38 @@ app.delete('/api/admin/passwords/delete', async (req, res) => {
   }
 });
 
+// ============================================
+// ЛОГИ (только для OWNER)
+// ============================================
+
+// Получить все логи
+app.get('/api/logs', async (req, res) => {
+  try {
+    const limit = parseInt(req.query.limit) || 100;
+    const logs = await logsDB.getAllLogs(limit);
+    res.json({ success: true, data: logs });
+  } catch (error) {
+    console.error('Ошибка получения логов:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Получить логи модератора
+app.get('/api/logs/:moderator', async (req, res) => {
+  try {
+    const { moderator } = req.params;
+    const limit = parseInt(req.query.limit) || 50;
+    const logs = await logsDB.getLogsByModerator(moderator, limit);
+    res.json({ success: true, data: logs });
+  } catch (error) {
+    console.error('Ошибка получения логов модератора:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // Запуск сервера
 const PORT = process.env.API_PORT || 4000;
 
-// Запуск сервера
 app.listen(PORT, () => {
   console.log(`🚀 API сервер запущен на порту ${PORT}`);
   console.log(`📡 API доступен по адресу: http://localhost:${PORT}/api`);

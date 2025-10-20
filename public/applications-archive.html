@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Архив заявок - Панель управления</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body class="bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 min-h-screen">
+    <!-- Навигация -->
+    <nav class="bg-white/10 backdrop-blur-md border-b border-white/20">
+        <div class="container mx-auto px-6 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-8">
+                    <h1 class="text-2xl font-bold text-white">📋 Архив заявок</h1>
+                    <div class="flex space-x-4">
+                        <a href="index.html" class="text-white/80 hover:text-white transition">Персонал</a>
+                        <a href="applications.html" class="text-white/80 hover:text-white transition">Заявки</a>
+                        <a href="applications-archive.html" class="text-white font-semibold">Архив</a>
+                        <a href="admin-passwords.html" class="text-white/80 hover:text-white transition">Пароли</a>
+                        <a href="logs.html" id="logsLink" class="text-white/80 hover:text-white transition hidden">Логи</a>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <span class="text-white" id="userInfo"></span>
+                    <button onclick="logout()" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition">
+                        <i class="fas fa-sign-out-alt mr-2"></i>Выход
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Контент -->
+    <div class="container mx-auto px-6 py-8">
+        <!-- Статистика -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            <div class="bg-white/10 backdrop-blur-md rounded-xl p-6 border border-white/20">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-white/80 text-sm">Принято заявок</p>
+                        <p class="text-4xl font-bold text-green-400" id="approvedCount">0</p>
+                    </div>
+                    <div class="bg-green-500/20 p-4 rounded-full">
+                        <i class="fas fa-check-circle text-3xl text-green-400"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white/10 backdrop-blur-md rounded-xl p-6 border border-white/20">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-white/80 text-sm">Отклонено заявок</p>
+                        <p class="text-4xl font-bold text-red-400" id="rejectedCount">0</p>
+                    </div>
+                    <div class="bg-red-500/20 p-4 rounded-full">
+                        <i class="fas fa-times-circle text-3xl text-red-400"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Фильтры -->
+        <div class="bg-white/10 backdrop-blur-md rounded-xl p-6 border border-white/20 mb-6">
+            <div class="flex flex-wrap gap-4">
+                <button onclick="filterApplications('all')" class="filter-btn active" data-filter="all">
+                    Все
+                </button>
+                <button onclick="filterApplications('Принята')" class="filter-btn" data-filter="Принята">
+                    Принятые
+                </button>
+                <button onclick="filterApplications('Отклонена')" class="filter-btn" data-filter="Отклонена">
+                    Отклоненные
+                </button>
+            </div>
+        </div>
+
+        <!-- Загрузка -->
+        <div id="loading" class="text-center py-12">
+            <i class="fas fa-spinner fa-spin text-6xl text-white mb-4"></i>
+            <p class="text-white text-xl">Загрузка архива...</p>
+        </div>
+
+        <!-- Нет данных -->
+        <div id="noData" class="text-center py-12 hidden">
+            <i class="fas fa-inbox text-6xl text-white/50 mb-4"></i>
+            <p class="text-white/80 text-xl">Архив пуст</p>
+        </div>
+
+        <!-- Список заявок -->
+        <div id="archiveList" class="space-y-4"></div>
+    </div>
+
+    <!-- Toast контейнер -->
+    <div id="toastContainer" class="fixed bottom-4 right-4 z-50 space-y-2"></div>
+
+    <script src="applications-archive.js"></script>
+</body>
+</html>
