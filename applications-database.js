@@ -118,68 +118,24 @@ class ApplicationsDatabase {
     }
   }
 
-  // Удалить заявку из таблицы (физическое удаление строки)
-  async deleteApplication(rowId) {
-    if (!this.initialized) {
-      await this.initialize();
-    }
-
-    try {
-      // Получаем информацию о таблице
-      const sheetMetadata = await this.sheets.spreadsheets.get({
-        spreadsheetId: this.spreadsheetId,
-        fields: 'sheets(properties(sheetId,title))'
-      });
-      
-      // Находим нужный лист по названию
-      const sheet = sheetMetadata.data.sheets.find(
-        s => s.properties.title === this.sheetName
-      );
-      
-      if (!sheet) {
-        throw new Error(`Лист "${this.sheetName}" не найден`);
-      }
-      
-      const sheetId = sheet.properties.sheetId;
-      
-      console.log(`🔍 Удаляем строку ${rowId} с листа "${this.sheetName}" (sheetId: ${sheetId})`);
-      
-      // Физически удаляем строку
-      await this.sheets.spreadsheets.batchUpdate({
-        spreadsheetId: this.spreadsheetId,
-        resource: {
-          requests: [{
-            deleteDimension: {
-              range: {
-                sheetId: sheetId,
-                dimension: 'ROWS',
-                startIndex: parseInt(rowId) - 1, // API использует 0-индексацию
-                endIndex: parseInt(rowId)
-              }
-            }
-          }]
-        }
-      });
-
-      console.log(`✅ Заявка удалена (строка ${rowId})`);
-      return true;
-    } catch (error) {
-      console.error('Ошибка удаления заявки:', error);
-      console.error('Детали:', error.message);
-      return false;
-    }
-  }
-
-  // Одобрить заявку (и удалить из таблицы)
+  // Одобрить заявку (обновляем статус в таблице)
   async approveApplication(rowId, position, comment) {
     if (!this.initialized) {
       await this.initialize();
     }
 
     try {
-      // Удаляем заявку из таблицы
-      await this.deleteApplication(rowId);
-      console.log(`✅ Заявка одобрена и удалена (строка ${rowId})`);
+      // Обновляем статус в таблице
+      await this.sheets.spreadsheets.values.update({
+        spreadsheetId: this.spreadsheetId,
+        range: `${this.sheetName}!G${rowId}:I${rowId}`,
+        valueInputOption: 'USER_ENTERED',
+        resource: {
+          values: [['approved', position, comment || '']]
+        }
+      });
+
+      console.log(`✅ Заявка одобрена (строка ${rowId})`);
       return true;
     } catch (error) {
       console.error('Ошибка одобрения заявки:', error.message);
@@ -187,16 +143,24 @@ class ApplicationsDatabase {
     }
   }
 
-  // Отклонить заявку (и удалить из таблицы)
+  // Отклонить заявку (обновляем статус в таблице)
   async rejectApplication(rowId, comment) {
     if (!this.initialized) {
       await this.initialize();
     }
 
     try {
-      // Удаляем заявку из таблицы
-      await this.deleteApplication(rowId);
-      console.log(`✅ Заявка отклонена и удалена (строка ${rowId})`);
+      // Обновляем статус в таблице
+      await this.sheets.spreadsheets.values.update({
+        spreadsheetId: this.spreadsheetId,
+        range: `${this.sheetName}!G${rowId}:I${rowId}`,
+        valueInputOption: 'USER_ENTERED',
+        resource: {
+          values: [['rejected', '', comment || '']]
+        }
+      });
+
+      console.log(`✅ Заявка отклонена (строка ${rowId})`);
       return true;
     } catch (error) {
       console.error('Ошибка отклонения заявки:', error.message);
