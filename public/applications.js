@@ -203,6 +203,14 @@ async function approveApplication() {
         return;
     }
     
+    console.log('Принятие заявки:', {
+        id: currentApplication.id,
+        position,
+        comment,
+        discord: currentApplication.discord,
+        minecraft: currentApplication.minecraft
+    });
+    
     try {
         // Получаем Discord модератора из localStorage
         const moderator = localStorage.getItem('userDiscord') || 'Неизвестный';

@@ -77,11 +77,15 @@ function updateUserInfo() {
         container.insertAdjacentHTML('afterend', userInfoHTML);
     }
     
-    // Показываем кнопку админ-панели паролей только для OWNER
+    // Показываем кнопки только для OWNER
     if (currentUser.position === 'OWNER') {
         const adminBtn = document.getElementById('adminPasswordsBtn');
         if (adminBtn) {
             adminBtn.style.display = 'inline-flex';
+        }
+        const logsBtn = document.getElementById('logsBtn');
+        if (logsBtn) {
+            logsBtn.style.display = 'inline-flex';
         }
     }
 }
