@@ -10,7 +10,15 @@ let db;
 
 async function connectDB() {
   try {
-    client = new MongoClient(uri);
+    // Опции подключения для совместимости с Render и MongoDB Atlas
+    const options = {
+      tls: true,
+      tlsAllowInvalidCertificates: false,
+      serverSelectionTimeoutMS: 30000,
+      socketTimeoutMS: 45000,
+    };
+    
+    client = new MongoClient(uri, options);
     await client.connect();
     db = client.db(dbName);
     
