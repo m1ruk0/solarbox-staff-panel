@@ -199,11 +199,7 @@ async function approveApplication() {
     const comment = document.getElementById('decisionComment').value.trim();
     
     if (!position) {
-        alert('Выберите должность!');
-        return;
-    }
-    
-    if (!confirm(`Одобрить заявку от ${currentApplication.discord} на должность ${position}?`)) {
+        showToast('Выберите должность!', 'error');
         return;
     }
     
@@ -217,14 +213,14 @@ async function approveApplication() {
         const data = await response.json();
         
         if (data.success) {
-            alert('✅ Заявка одобрена! Сотрудник добавлен в базу.');
+            showToast('✅ Заявка одобрена! Сотрудник добавлен в базу.');
             closeDecisionModal();
             loadApplications();
         } else {
-            alert('❌ Ошибка: ' + data.error);
+            showToast('Ошибка: ' + data.error, 'error');
         }
     } catch (error) {
-        alert('❌ Ошибка подключения к серверу');
+        showToast('Ошибка подключения к серверу', 'error');
         console.error(error);
     }
 }
@@ -234,10 +230,6 @@ async function rejectApplication() {
     if (!currentApplication) return;
     
     const comment = document.getElementById('decisionComment').value.trim();
-    
-    if (!confirm(`Отклонить заявку от ${currentApplication.discord}?`)) {
-        return;
-    }
     
     try {
         const response = await fetch(`${API_URL}/applications/${currentApplication.id}/reject`, {
@@ -249,14 +241,14 @@ async function rejectApplication() {
         const data = await response.json();
         
         if (data.success) {
-            alert('❌ Заявка отклонена.');
+            showToast('Заявка отклонена', 'error');
             closeDecisionModal();
             loadApplications();
         } else {
-            alert('❌ Ошибка: ' + data.error);
+            showToast('Ошибка: ' + data.error, 'error');
         }
     } catch (error) {
-        alert('❌ Ошибка подключения к серверу');
+        showToast('Ошибка подключения к серверу', 'error');
         console.error(error);
     }
 }
