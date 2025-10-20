@@ -3,7 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const staffDB = require('./staff-database-supabase');
-const applicationsDB = require('./applications-database-supabase');
+const applicationsDB = require('./applications-database'); // Google Sheets для заявок!
 const passwordsDB = require('./passwords-database-supabase');
 const { hasPermission, canPromoteTo, getAvailablePositions } = require('./roles');
 
