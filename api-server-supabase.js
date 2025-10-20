@@ -318,12 +318,32 @@ app.post('/api/applications/:id/approve', async (req, res) => {
     const { id } = req.params;
     const { position, comment, moderator } = req.body;
     
+    // Получаем данные заявки
+    const applications = await applicationsDB.getAllApplications();
+    const application = applications.find(app => app.id === id);
+    
+    if (!application) {
+      return res.status(404).json({ success: false, error: 'Заявка не найдена' });
+    }
+    
+    // Добавляем сотрудника в Supabase
+    const staffAdded = await staffDB.addStaff(
+      application.discord || application.allFields['Discord'] || 'unknown',
+      application.minecraft || application.allFields['Minecraft никнейм'] || 'unknown',
+      position
+    );
+    
+    if (!staffAdded) {
+      return res.status(400).json({ success: false, error: 'Не удалось добавить сотрудника' });
+    }
+    
+    // Обновляем статус в Google Sheets
     const success = await applicationsDB.approveApplication(id, position, comment, moderator);
     
     if (success) {
-      res.json({ success: true, message: 'Заявка принята' });
+      res.json({ success: true, message: 'Заявка принята, сотрудник добавлен' });
     } else {
-      res.status(404).json({ success: false, error: 'Заявка не найдена' });
+      res.status(404).json({ success: false, error: 'Не удалось обновить заявку' });
     }
   } catch (error) {
     console.error('Ошибка принятия заявки:', error);

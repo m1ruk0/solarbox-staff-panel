@@ -145,26 +145,20 @@ class ApplicationsDatabase {
     }
   }
 
-  // Отклонить заявку (обновляем статус в таблице)
+  // Отклонить заявку (удаляем строку из таблицы)
   async rejectApplication(rowId, comment, moderator) {
     if (!this.initialized) {
       await this.initialize();
     }
 
     try {
-      const now = new Date().toLocaleString('ru-RU');
-      
-      // Обновляем статус в таблице: G=статус, H=должность, I=комментарий, J=модератор, K=дата
-      await this.sheets.spreadsheets.values.update({
+      // Очищаем строку (удаляем заявку)
+      await this.sheets.spreadsheets.values.clear({
         spreadsheetId: this.spreadsheetId,
-        range: `${this.sheetName}!G${rowId}:K${rowId}`,
-        valueInputOption: 'USER_ENTERED',
-        resource: {
-          values: [['Отклонена', '', comment || '', moderator || 'Система', now]]
-        }
+        range: `${this.sheetName}!A${rowId}:Z${rowId}`
       });
 
-      console.log(`✅ Заявка отклонена (строка ${rowId}) модератором ${moderator}`);
+      console.log(`✅ Заявка отклонена и удалена (строка ${rowId}) модератором ${moderator}`);
       return true;
     } catch (error) {
       console.error('Ошибка отклонения заявки:', error.message);
