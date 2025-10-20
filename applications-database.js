@@ -119,23 +119,25 @@ class ApplicationsDatabase {
   }
 
   // Одобрить заявку (обновляем статус в таблице)
-  async approveApplication(rowId, position, comment) {
+  async approveApplication(rowId, position, comment, moderator) {
     if (!this.initialized) {
       await this.initialize();
     }
 
     try {
-      // Обновляем статус в таблице
+      const now = new Date().toLocaleString('ru-RU');
+      
+      // Обновляем статус в таблице: G=статус, H=должность, I=комментарий, J=модератор, K=дата
       await this.sheets.spreadsheets.values.update({
         spreadsheetId: this.spreadsheetId,
-        range: `${this.sheetName}!G${rowId}:I${rowId}`,
+        range: `${this.sheetName}!G${rowId}:K${rowId}`,
         valueInputOption: 'USER_ENTERED',
         resource: {
-          values: [['approved', position, comment || '']]
+          values: [['Принята', position, comment || '', moderator || 'Система', now]]
         }
       });
 
-      console.log(`✅ Заявка одобрена (строка ${rowId})`);
+      console.log(`✅ Заявка одобрена (строка ${rowId}) модератором ${moderator}`);
       return true;
     } catch (error) {
       console.error('Ошибка одобрения заявки:', error.message);
@@ -144,23 +146,25 @@ class ApplicationsDatabase {
   }
 
   // Отклонить заявку (обновляем статус в таблице)
-  async rejectApplication(rowId, comment) {
+  async rejectApplication(rowId, comment, moderator) {
     if (!this.initialized) {
       await this.initialize();
     }
 
     try {
-      // Обновляем статус в таблице
+      const now = new Date().toLocaleString('ru-RU');
+      
+      // Обновляем статус в таблице: G=статус, H=должность, I=комментарий, J=модератор, K=дата
       await this.sheets.spreadsheets.values.update({
         spreadsheetId: this.spreadsheetId,
-        range: `${this.sheetName}!G${rowId}:I${rowId}`,
+        range: `${this.sheetName}!G${rowId}:K${rowId}`,
         valueInputOption: 'USER_ENTERED',
         resource: {
-          values: [['rejected', '', comment || '']]
+          values: [['Отклонена', '', comment || '', moderator || 'Система', now]]
         }
       });
 
-      console.log(`✅ Заявка отклонена (строка ${rowId})`);
+      console.log(`✅ Заявка отклонена (строка ${rowId}) модератором ${moderator}`);
       return true;
     } catch (error) {
       console.error('Ошибка отклонения заявки:', error.message);

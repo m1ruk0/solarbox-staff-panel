@@ -313,12 +313,12 @@ app.post('/api/applications', async (req, res) => {
 });
 
 // Принять заявку
-app.put('/api/applications/:id/approve', async (req, res) => {
+app.post('/api/applications/:id/approve', async (req, res) => {
   try {
     const { id } = req.params;
-    const { comment } = req.body;
+    const { position, comment, moderator } = req.body;
     
-    const success = await applicationsDB.approveApplication(id, comment);
+    const success = await applicationsDB.approveApplication(id, position, comment, moderator);
     
     if (success) {
       res.json({ success: true, message: 'Заявка принята' });
@@ -332,12 +332,12 @@ app.put('/api/applications/:id/approve', async (req, res) => {
 });
 
 // Отклонить заявку
-app.put('/api/applications/:id/reject', async (req, res) => {
+app.post('/api/applications/:id/reject', async (req, res) => {
   try {
     const { id } = req.params;
-    const { comment } = req.body;
+    const { comment, moderator } = req.body;
     
-    const success = await applicationsDB.rejectApplication(id, comment);
+    const success = await applicationsDB.rejectApplication(id, comment, moderator);
     
     if (success) {
       res.json({ success: true, message: 'Заявка отклонена' });

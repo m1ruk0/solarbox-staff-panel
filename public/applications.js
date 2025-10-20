@@ -204,10 +204,13 @@ async function approveApplication() {
     }
     
     try {
+        // Получаем Discord модератора из localStorage
+        const moderator = localStorage.getItem('userDiscord') || 'Неизвестный';
+        
         const response = await fetch(`${API_URL}/applications/${currentApplication.id}/approve`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ position, comment })
+            body: JSON.stringify({ position, comment, moderator })
         });
         
         const data = await response.json();
@@ -232,10 +235,13 @@ async function rejectApplication() {
     const comment = document.getElementById('decisionComment').value.trim();
     
     try {
+        // Получаем Discord модератора из localStorage
+        const moderator = localStorage.getItem('userDiscord') || 'Неизвестный';
+        
         const response = await fetch(`${API_URL}/applications/${currentApplication.id}/reject`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ comment })
+            body: JSON.stringify({ comment, moderator })
         });
         
         const data = await response.json();
