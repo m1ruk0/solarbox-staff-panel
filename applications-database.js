@@ -118,40 +118,17 @@ class ApplicationsDatabase {
     }
   }
 
-  // Удалить заявку из таблицы
+  // Удалить заявку из таблицы (очищаем строку)
   async deleteApplication(rowId) {
     if (!this.initialized) {
       await this.initialize();
     }
 
     try {
-      // Получаем sheetId
-      const sheetMetadata = await this.sheets.spreadsheets.get({
-        spreadsheetId: this.spreadsheetId
-      });
-      
-      const sheet = sheetMetadata.data.sheets.find(s => s.properties.title === this.sheetName);
-      if (!sheet) {
-        throw new Error(`Лист "${this.sheetName}" не найден`);
-      }
-      
-      const sheetId = sheet.properties.sheetId;
-      
-      // Удаляем строку (rowId - 1 потому что API использует 0-индексацию)
-      await this.sheets.spreadsheets.batchUpdate({
+      // Очищаем всю строку
+      await this.sheets.spreadsheets.values.clear({
         spreadsheetId: this.spreadsheetId,
-        resource: {
-          requests: [{
-            deleteDimension: {
-              range: {
-                sheetId: sheetId,
-                dimension: 'ROWS',
-                startIndex: parseInt(rowId) - 1,
-                endIndex: parseInt(rowId)
-              }
-            }
-          }]
-        }
+        range: `${this.sheetName}!A${rowId}:Z${rowId}`
       });
 
       console.log(`✅ Заявка удалена (строка ${rowId})`);
