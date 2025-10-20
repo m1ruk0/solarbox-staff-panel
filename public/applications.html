@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Управление заявками</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Навигация -->
+    <div class="header-card">
+        <div class="flex items-center justify-between flex-wrap gap-4">
+            <div>
+                <h1 class="text-4xl font-bold text-gray-800 mb-2">
+                    <i class="fas fa-clipboard-list text-indigo-600 mr-3"></i>
+                    Управление заявками
+                </h1>
+                <p class="text-gray-600">Принимайте решения по заявкам на вступление в персонал</p>
+            </div>
+            <div class="flex gap-3">
+                <a href="index.html" class="btn btn-secondary">
+                    <i class="fas fa-users mr-2"></i>
+                    Персонал
+                </a>
+                <button onclick="loadApplications()" class="btn btn-primary">
+                    <i class="fas fa-sync mr-2"></i>
+                    Обновить
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Статистика заявок -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="stat-label">Всего заявок</p>
+                    <p class="stat-value" id="totalApps">0</p>
+                </div>
+                <div class="stat-icon stat-icon-blue">
+                    <i class="fas fa-file-alt"></i>
+                </div>
+            </div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="stat-label">Ожидают решения</p>
+                    <p class="stat-value text-yellow-600" id="pendingApps">0</p>
+                </div>
+                <div class="stat-icon stat-icon-yellow">
+                    <i class="fas fa-clock"></i>
+                </div>
+            </div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="stat-label">Одобрено</p>
+                    <p class="stat-value text-green-600" id="approvedApps">0</p>
+                </div>
+                <div class="stat-icon stat-icon-green">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+            </div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="stat-label">Отклонено</p>
+                    <p class="stat-value text-red-600" id="rejectedApps">0</p>
+                </div>
+                <div class="stat-icon stat-icon-red">
+                    <i class="fas fa-times-circle"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Список заявок -->
+    <div class="glass-card">
+        <div id="applicationsTable"></div>
+        <div id="loading" class="text-center py-12">
+            <i class="fas fa-spinner fa-spin text-4xl text-indigo-600"></i>
+            <p class="text-gray-600 mt-4">Загрузка заявок...</p>
+        </div>
+        <div id="noData" class="text-center py-12" style="display: none;">
+            <i class="fas fa-inbox text-6xl text-gray-300 mb-4"></i>
+            <p class="text-gray-600">Нет заявок</p>
+        </div>
+    </div>
+
+    <!-- Модальное окно принятия решения -->
+    <div id="decisionModal" class="modal">
+        <div class="modal-content" style="max-width: 600px; max-height: 80vh; overflow-y: auto;">
+            <div class="modal-header">
+                <h3 class="text-2xl font-bold">Принять решение</h3>
+                <button onclick="closeDecisionModal()" class="text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-times text-2xl"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-4 bg-gray-50 p-3 rounded-lg">
+                    <p class="text-sm"><strong>Discord:</strong> <span id="modalDiscord"></span></p>
+                    <p class="text-sm"><strong>Minecraft:</strong> <span id="modalMinecraft"></span></p>
+                </div>
+
+                <div class="mb-4">
+                    <label class="block text-gray-700 font-semibold mb-2">
+                        <i class="fas fa-briefcase text-indigo-600 mr-2"></i>
+                        Выберите должность
+                    </label>
+                    <select id="positionSelect" class="input-field">
+                        <option value="">Выберите должность</option>
+                        <option value="OWNER">OWNER</option>
+                        <option value="RAZRAB">RAZRAB</option>
+                        <option value="TEX.ADMIN">TEX.ADMIN</option>
+                        <option value="ADMIN">ADMIN</option>
+                        <option value="CURATOR">CURATOR</option>
+                        <option value="ZAM.CURATOR">ZAM.CURATOR</option>
+                        <option value="GL.STAFF">GL.STAFF</option>
+                        <option value="MODER">MODER</option>
+                        <option value="CT.HELPER">CT.HELPER</option>
+                        <option value="HELPER">HELPER</option>
+                    </select>
+                </div>
+
+                <div class="mb-4">
+                    <label class="block text-gray-700 font-semibold mb-2">
+                        <i class="fas fa-comment text-indigo-600 mr-2"></i>
+                        Комментарий (необязательно)
+                    </label>
+                    <textarea id="decisionComment" class="input-field" rows="3" placeholder="Дополнительная информация..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button onclick="closeDecisionModal()" class="btn btn-secondary">
+                    Отмена
+                </button>
+                <button onclick="rejectApplication()" class="btn btn-danger">
+                    <i class="fas fa-times mr-2"></i>
+                    Отклонить
+                </button>
+                <button onclick="approveApplication()" class="btn btn-success">
+                    <i class="fas fa-check mr-2"></i>
+                    Одобрить
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Контейнер для toast уведомлений -->
+    <div id="toastContainer" class="toast-container"></div>
+
+    <script src="applications.js"></script>
+</body>
+</html>
