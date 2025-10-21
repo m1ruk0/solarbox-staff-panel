@@ -39,6 +39,16 @@ CREATE TABLE IF NOT EXISTS applications (
   created_at TIMESTAMP DEFAULT NOW()
 );
 
+-- Таблица логов
+CREATE TABLE IF NOT EXISTS logs (
+  id BIGSERIAL PRIMARY KEY,
+  action TEXT NOT NULL,
+  moderator TEXT NOT NULL,
+  target TEXT,
+  details TEXT,
+  timestamp TIMESTAMP DEFAULT NOW()
+);
+
 -- Индексы для быстрого поиска
 CREATE INDEX IF NOT EXISTS idx_staff_discord ON staff(discord);
 CREATE INDEX IF NOT EXISTS idx_staff_position ON staff(position);
@@ -50,8 +60,10 @@ CREATE INDEX IF NOT EXISTS idx_applications_status ON applications(status);
 ALTER TABLE staff ENABLE ROW LEVEL SECURITY;
 ALTER TABLE passwords ENABLE ROW LEVEL SECURITY;
 ALTER TABLE applications ENABLE ROW LEVEL SECURITY;
+ALTER TABLE logs ENABLE ROW LEVEL SECURITY;
 
 -- Политики доступа (разрешаем все операции для service_role)
 CREATE POLICY "Enable all for service role" ON staff FOR ALL USING (true);
 CREATE POLICY "Enable all for service role" ON passwords FOR ALL USING (true);
 CREATE POLICY "Enable all for service role" ON applications FOR ALL USING (true);
+CREATE POLICY "Enable all for service role" ON logs FOR ALL USING (true);
