@@ -688,6 +688,14 @@ client.once('clientReady', async () => {
   createWebhookServer(client);
 });
 
-client.login(process.env.DISCORD_TOKEN);
+// Запускаем бота только если токен валидный
+if (process.env.DISCORD_TOKEN && process.env.DISCORD_TOKEN !== 'ваш_токен_бота_здесь') {
+  client.login(process.env.DISCORD_TOKEN).catch(err => {
+    console.error('❌ Ошибка запуска Discord бота:', err.message);
+    console.log('ℹ️  API сервер продолжит работу без Discord бота');
+  });
+} else {
+  console.log('ℹ️  Discord токен не настроен, бот не запущен');
+}
 
 module.exports = { client, sendApplicationAcceptedDM };
