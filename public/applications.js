@@ -1,5 +1,7 @@
-// API URL
-const API_URL = window.location.origin + '/api';
+// API URL - работает и в браузере и в Electron
+const API_URL = window.location.protocol === 'file:' 
+    ? 'http://localhost:4000/api' 
+    : window.location.origin + '/api';
 
 let allApplications = [];
 let currentApplication = null;
