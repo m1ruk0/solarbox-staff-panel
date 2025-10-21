@@ -8,6 +8,17 @@ const passwordsDB = require('./passwords-database-supabase');
 const logsDB = require('./logs-database-supabase');
 const { hasPermission, canPromoteTo, getAvailablePositions } = require('./roles');
 
+let sendApplicationAcceptedDM;
+setTimeout(() => {
+  try {
+    const discordBot = require('./index');
+    sendApplicationAcceptedDM = discordBot.sendApplicationAcceptedDM;
+    console.log('✅ Discord бот подключен для отправки уведомлений');
+  } catch (error) {
+    console.log('⚠️ Discord бот не подключен:', error.message);
+  }
+}, 3000);
+
 const app = express();
 
 // Middleware
@@ -344,6 +355,20 @@ app.post('/api/applications/:id/approve', async (req, res) => {
     const success = await applicationsDB.approveApplication(id, position, comment, moderator);
     
     if (success) {
+      // Отправляем уведомление в Discord ЛС
+      const discordUsername = application.discord || application.allFields['Discord'] || application.allFields['Ваш дискорд:'];
+      
+      if (sendApplicationAcceptedDM && discordUsername) {
+        try {
+          await sendApplicationAcceptedDM(discordUsername, position, comment);
+          console.log(`✅ Уведомление отправлено пользователю ${discordUsername}`);
+        } catch (error) {
+          console.error('❌ Ошибка отправки уведомления:', error.message);
+        }
+      } else {
+        console.log('⚠️ Бот не готов или Discord username не найден');
+      }
+      
       res.json({ success: true, message: 'Заявка принята, сотрудник добавлен' });
     } else {
       res.status(404).json({ success: false, error: 'Не удалось обновить заявку' });

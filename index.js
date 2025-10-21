@@ -633,14 +633,61 @@ client.on('interactionCreate', async interaction => {
   }
 });
 
-// Событие готовности бота
+async function sendApplicationAcceptedDM(discordUsername, position, comment) {
+  try {
+    let cleanUsername = discordUsername.trim();
+    if (cleanUsername.startsWith('@')) {
+      cleanUsername = cleanUsername.substring(1);
+    }
+    
+    const guild = client.guilds.cache.first();
+    if (!guild) {
+      console.log('❌ Бот не находится ни на одном сервере');
+      return false;
+    }
+
+    await guild.members.fetch();
+    
+    const member = guild.members.cache.find(m => 
+      m.user.username.toLowerCase() === cleanUsername.toLowerCase() ||
+      m.user.tag.toLowerCase() === cleanUsername.toLowerCase() ||
+      m.displayName.toLowerCase() === cleanUsername.toLowerCase()
+    );
+
+    if (!member) {
+      console.log(`❌ Пользователь ${discordUsername} не найден на сервере`);
+      return false;
+    }
+
+    const positionLower = position.toLowerCase();
+    const messageConfig = config.applicationTypes[positionLower]?.acceptedMessage || config.messages.accepted;
+    
+    const embed = new EmbedBuilder()
+      .setTitle(messageConfig.title)
+      .setDescription(`${messageConfig.description}\n\n**Должность:** ${position}${comment ? `\n**Комментарий модератора:** ${comment}` : ''}`)
+      .setColor(messageConfig.color)
+      .setFooter({ text: 'Панель управления персоналом' })
+      .setTimestamp();
+
+    await member.send({ embeds: [embed] });
+    console.log(`✅ Уведомление отправлено пользователю ${member.user.tag}`);
+    return true;
+  } catch (error) {
+    console.error('❌ Ошибка отправки ЛС:', error.message);
+    if (error.code === 50007) {
+      console.log('⚠️ Пользователь запретил ЛС от ботов');
+    }
+    return false;
+  }
+}
+
 client.once('clientReady', async () => {
   console.log(`✅ Бот запущен как ${client.user.tag}`);
   await registerCommands();
   
-  // Запускаем webhook сервер
   createWebhookServer(client);
 });
 
-// Запуск бота
 client.login(process.env.DISCORD_TOKEN);
+
+module.exports = { client, sendApplicationAcceptedDM };
