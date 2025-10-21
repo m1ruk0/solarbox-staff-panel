@@ -231,6 +231,21 @@ app.get('/api/health', (req, res) => {
   res.json({ success: true, message: 'API работает' });
 });
 
+// Корневой маршрут
+app.get('/', (req, res) => {
+  res.json({ 
+    success: true, 
+    message: 'Staff Management API Server',
+    version: '1.0.0',
+    endpoints: {
+      staff: '/api/staff',
+      applications: '/api/applications',
+      auth: '/api/auth/login',
+      health: '/api/health'
+    }
+  });
+});
+
 // ============================================
 // АВТОРИЗАЦИЯ
 // ============================================
