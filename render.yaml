@@ -3,9 +3,15 @@ services:
     name: staff-management-panel
     env: node
     buildCommand: npm install
-    startCommand: node api-server-mongo.js
+    startCommand: node api-server-supabase.js
     envVars:
-      - key: MONGODB_URI
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_KEY
+        sync: false
+      - key: GOOGLE_SHEETS_CREDENTIALS
+        sync: false
+      - key: SPREADSHEET_ID
         sync: false
       - key: API_PORT
         value: 4000
