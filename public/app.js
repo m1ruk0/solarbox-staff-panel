@@ -137,21 +137,36 @@ function updatePositionSelects() {
     
     const availablePositions = currentUser.permissions.availablePositions || [];
     
+    const roleEmojis = {
+        'OWNER': '👑',
+        'RAZRAB': '💻',
+        'TEX.ADMIN': '🖥️',
+        'ADMIN': '🛡️',
+        'CURATOR': '👔',
+        'ZAM.CURATOR': '✅',
+        'GL.STAFF': '⭐',
+        'MODER': '⚖️',
+        'CT.HELPER': '🤝',
+        'HELPER': '❤️'
+    };
+    
     // Обновляем select в модальном окне должности
     const positionSelect = document.getElementById('newPositionSelect');
     if (positionSelect) {
-        positionSelect.innerHTML = '<option value="">Выберите должность</option>';
+        positionSelect.innerHTML = '<option value="">📋 Выберите должность</option>';
         availablePositions.forEach(pos => {
-            positionSelect.innerHTML += `<option value="${pos}">${pos}</option>`;
+            const emoji = roleEmojis[pos] || '👤';
+            positionSelect.innerHTML += `<option value="${pos}">${emoji} ${pos}</option>`;
         });
     }
     
     // Обновляем select при добавлении сотрудника
     const newPositionSelect = document.getElementById('newPosition');
     if (newPositionSelect) {
-        newPositionSelect.innerHTML = '<option value="">Выберите должность</option>';
+        newPositionSelect.innerHTML = '<option value="">📋 Выберите должность</option>';
         availablePositions.forEach(pos => {
-            newPositionSelect.innerHTML += `<option value="${pos}">${pos}</option>`;
+            const emoji = roleEmojis[pos] || '👤';
+            newPositionSelect.innerHTML += `<option value="${pos}">${emoji} ${pos}</option>`;
         });
     }
 }
@@ -376,7 +391,11 @@ async function updatePosition() {
         const response = await fetch(`${API_URL}/staff/${encodeURIComponent(currentPositionDiscord)}/position`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ position: newPosition })
+            body: JSON.stringify({ 
+                position: newPosition,
+                moderator: currentUser.discord,
+                moderatorPosition: currentUser.position
+            })
         });
         
         const data = await response.json();
@@ -423,7 +442,12 @@ async function submitAddWarn() {
         const response = await fetch(`${API_URL}/staff/${encodeURIComponent(currentWarnDiscord)}/warn`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ count, reason })
+            body: JSON.stringify({ 
+                count, 
+                reason,
+                moderator: currentUser.discord,
+                moderatorPosition: currentUser.position
+            })
         });
         
         const data = await response.json();
@@ -471,7 +495,12 @@ async function submitRemoveWarn() {
         const response = await fetch(`${API_URL}/staff/${encodeURIComponent(currentRemoveWarnDiscord)}/warn`, {
             method: 'DELETE',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ count, reason })
+            body: JSON.stringify({ 
+                count, 
+                reason,
+                moderator: currentUser.discord,
+                moderatorPosition: currentUser.position
+            })
         });
         
         const data = await response.json();
@@ -518,7 +547,12 @@ async function setVacation() {
         const response = await fetch(`${API_URL}/staff/${encodeURIComponent(currentVacationDiscord)}/vacation`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ vacation: true, days: days })
+            body: JSON.stringify({ 
+                vacation: true, 
+                days: days,
+                moderator: currentUser.discord,
+                moderatorPosition: currentUser.position
+            })
         });
         
         const data = await response.json();
@@ -543,7 +577,11 @@ async function removeVacation() {
         const response = await fetch(`${API_URL}/staff/${encodeURIComponent(currentVacationDiscord)}/vacation`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ vacation: false })
+            body: JSON.stringify({ 
+                vacation: false,
+                moderator: currentUser.discord,
+                moderatorPosition: currentUser.position
+            })
         });
         
         const data = await response.json();
@@ -625,7 +663,11 @@ async function submitDelete() {
         const response = await fetch(`${API_URL}/staff/${encodeURIComponent(currentDeleteDiscord)}/permanent-delete`, {
             method: 'DELETE',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ reason: reason })
+            body: JSON.stringify({ 
+                reason: reason,
+                moderator: currentUser.discord,
+                moderatorPosition: currentUser.position
+            })
         });
         
         const data = await response.json();
@@ -671,7 +713,11 @@ async function submitFire() {
         const response = await fetch(`${API_URL}/staff/${encodeURIComponent(currentFireDiscord)}`, {
             method: 'DELETE',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ reason: reason })
+            body: JSON.stringify({ 
+                reason: reason,
+                moderator: currentUser.discord,
+                moderatorPosition: currentUser.position
+            })
         });
         
         const data = await response.json();

@@ -1,28 +1,88 @@
 {
-  "name": "discord-application-bot",
+  "name": "solarbox-staff-panel",
   "version": "1.0.0",
-  "description": "Discord бот для обработки заявок",
-  "main": "index.js",
+  "description": "SolarBox - Панель управления персоналом",
+  "main": "electron-main.js",
   "scripts": {
     "start": "node index.js",
-    "api": "node api-server.js",
+    "api": "node api-server-supabase.js",
+    "api-sheets": "node api-server.js",
     "api-mongo": "node api-server-mongo.js",
-    "dev": "node index.js & node api-server.js"
+    "dev": "node index.js & node api-server-supabase.js",
+    "test-supabase": "node test-supabase-connection.js",
+    "electron": "electron .",
+    "electron-dev": "electron . --dev",
+    "build": "electron-builder --win --x64",
+    "build-portable": "electron-builder --win portable",
+    "dist": "electron-builder"
+  },
+  "build": {
+    "appId": "com.solarbox.staffpanel",
+    "productName": "SolarBox Staff Panel",
+    "asar": true,
+    "asarUnpack": [
+      ".env"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        },
+        {
+          "target": "portable",
+          "arch": ["x64"]
+        }
+      ],
+      "icon": "icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "SolarBox Staff Panel"
+    },
+    "files": [
+      "**/*",
+      ".env",
+      "!node_modules/**/*",
+      "node_modules/**/*"
+    ],
+    "extraResources": [
+      {
+        "from": ".env",
+        "to": ".env"
+      },
+      {
+        "from": "icon.ico",
+        "to": "icon.ico"
+      }
+    ],
+    "directories": {
+      "output": "dist"
+    }
   },
   "keywords": [
     "discord",
     "bot",
-    "applications"
+    "applications",
+    "staff",
+    "management"
   ],
-  "author": "",
+  "author": "SolarBox",
   "license": "MIT",
   "dependencies": {
+    "@supabase/supabase-js": "^2.76.1",
     "axios": "^1.12.2",
     "cors": "^2.8.5",
     "discord.js": "^14.14.1",
     "dotenv": "^16.3.1",
     "express": "^4.18.2",
-    "googleapis": "^128.0.0",
-    "@supabase/supabase-js": "^2.39.0"
+    "googleapis": "^128.0.0"
+  },
+  "devDependencies": {
+    "electron": "^28.0.0",
+    "electron-builder": "^24.9.1"
   }
 }

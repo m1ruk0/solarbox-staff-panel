@@ -3,21 +3,29 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const staffDB = require('./staff-database-supabase');
-const applicationsDB = require('./applications-database'); // Google Sheets для заявок!
+const applicationsDB = require('./applications-database-supabase'); // Supabase для заявок!
 const passwordsDB = require('./passwords-database-supabase');
 const logsDB = require('./logs-database-supabase');
-const { hasPermission, canPromoteTo, getAvailablePositions } = require('./roles');
+const { hasPermission, canPromoteTo, getAvailablePositions, canManageStaffMember } = require('./roles');
 
-let sendApplicationAcceptedDM;
-setTimeout(() => {
-  try {
-    const discordBot = require('./index');
-    sendApplicationAcceptedDM = discordBot.sendApplicationAcceptedDM;
-    console.log('✅ Discord бот подключен для отправки уведомлений');
-  } catch (error) {
-    console.log('⚠️ Discord бот не подключен:', error.message);
-  }
-}, 3000);
+// Discord бот (опционально)
+let sendApplicationAcceptedDM = null;
+
+// Пытаемся подключить Discord бота только если токен настроен
+if (process.env.DISCORD_TOKEN && process.env.DISCORD_TOKEN !== 'ваш_токен_бота_здесь') {
+  setTimeout(() => {
+    try {
+      const discordBot = require('./index');
+      sendApplicationAcceptedDM = discordBot.sendApplicationAcceptedDM;
+      console.log('✅ Discord бот подключен для отправки уведомлений');
+    } catch (error) {
+      console.log('⚠️ Discord бот не подключен:', error.message);
+    }
+  }, 3000);
+} else {
+  console.log('ℹ️  Discord бот отключен (токен не настроен)');
+  console.log('   API сервер работает без Discord уведомлений');
+}
 
 const app = express();
 
@@ -25,12 +33,40 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// Helper функция для проверки прав управления сотрудником
+async function checkManagementPermission(moderator, moderatorPosition, targetDiscord) {
+  // Проверка прав модератора
+  if (!moderatorPosition || !hasPermission(moderatorPosition, 'canManageStaff')) {
+    return { allowed: false, error: 'У вас нет прав на управление персоналом' };
+  }
+  
+  // Получаем данные целевого сотрудника
+  const allStaff = await staffDB.getAllStaff();
+  const targetStaff = allStaff.find(s => s.discord.toLowerCase() === targetDiscord.toLowerCase());
+  
+  if (!targetStaff) {
+    return { allowed: false, error: 'Сотрудник не найден' };
+  }
+  
+  // Проверка: нельзя управлять самим собой
+  if (moderator && moderator.toLowerCase() === targetDiscord.toLowerCase()) {
+    return { allowed: false, error: 'Вы не можете выполнить это действие с самим собой' };
+  }
+  
+  // Проверка: можно управлять только теми, кто ниже по иерархии
+  if (!canManageStaffMember(moderatorPosition, targetStaff.position)) {
+    return { allowed: false, error: 'Вы не можете управлять сотрудником с такой же или выше должностью' };
+  }
+  
+  return { allowed: true, targetStaff };
+}
+
 // Раздача статических файлов
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Главная страница
+// Главная страница - перенаправление на landing
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'login.html'));
+  res.redirect('/landing.html');
 });
 
 // ============================================
@@ -71,7 +107,35 @@ app.post('/api/staff', async (req, res) => {
 app.put('/api/staff/:discord/position', async (req, res) => {
   try {
     const { discord } = req.params;
-    const { position, moderator } = req.body;
+    const { position, moderator, moderatorPosition } = req.body;
+    
+    // Проверка прав модератора
+    if (!moderatorPosition || !hasPermission(moderatorPosition, 'canManageStaff')) {
+      return res.status(403).json({ success: false, error: 'У вас нет прав на управление персоналом' });
+    }
+    
+    // Проверка, может ли модератор выдать эту должность
+    if (!canPromoteTo(moderatorPosition, position)) {
+      return res.status(403).json({ success: false, error: `Вы не можете выдавать должность ${position}` });
+    }
+    
+    // Получаем данные целевого сотрудника
+    const allStaff = await staffDB.getAllStaff();
+    const targetStaff = allStaff.find(s => s.discord.toLowerCase() === discord.toLowerCase());
+    
+    if (!targetStaff) {
+      return res.status(404).json({ success: false, error: 'Сотрудник не найден' });
+    }
+    
+    // Проверка: нельзя изменять должность самому себе
+    if (moderator && moderator.toLowerCase() === discord.toLowerCase()) {
+      return res.status(403).json({ success: false, error: 'Вы не можете изменить должность самому себе' });
+    }
+    
+    // Проверка: можно управлять только теми, кто ниже по иерархии
+    if (!canManageStaffMember(moderatorPosition, targetStaff.position)) {
+      return res.status(403).json({ success: false, error: 'Вы не можете управлять сотрудником с такой же или выше должностью' });
+    }
     
     const success = await staffDB.updatePosition(discord, position);
     
@@ -79,7 +143,7 @@ app.put('/api/staff/:discord/position', async (req, res) => {
       await logsDB.addLog('Изменена должность', moderator || 'Система', discord, `Новая должность: ${position}`);
       res.json({ success: true, message: 'Должность обновлена' });
     } else {
-      res.status(404).json({ success: false, error: 'Сотрудник не найден' });
+      res.status(404).json({ success: false, error: 'Не удалось обновить должность' });
     }
   } catch (error) {
     console.error('Ошибка обновления должности:', error);
@@ -91,11 +155,23 @@ app.put('/api/staff/:discord/position', async (req, res) => {
 app.post('/api/staff/:discord/warn', async (req, res) => {
   try {
     const { discord } = req.params;
-    const { count, reason } = req.body;
+    const { count, reason, moderator, moderatorPosition } = req.body;
+    
+    // Проверка прав
+    const permission = await checkManagementPermission(moderator, moderatorPosition, discord);
+    if (!permission.allowed) {
+      return res.status(403).json({ success: false, error: permission.error });
+    }
     
     const success = await staffDB.addWarn(discord, count);
     
     if (success) {
+      await logsDB.addLog(
+        'Выдан варн',
+        moderator || 'Система',
+        discord,
+        `Количество: ${count || 1}. Причина: ${reason || 'Не указана'}`
+      );
       res.json({ success: true, message: 'Варн добавлен' });
     } else {
       res.status(404).json({ success: false, error: 'Сотрудник не найден' });
@@ -110,11 +186,23 @@ app.post('/api/staff/:discord/warn', async (req, res) => {
 app.delete('/api/staff/:discord/warn', async (req, res) => {
   try {
     const { discord } = req.params;
-    const { count, reason } = req.body;
+    const { count, reason, moderator, moderatorPosition } = req.body;
+    
+    // Проверка прав
+    const permission = await checkManagementPermission(moderator, moderatorPosition, discord);
+    if (!permission.allowed) {
+      return res.status(403).json({ success: false, error: permission.error });
+    }
     
     const success = await staffDB.removeWarn(discord, count);
     
     if (success) {
+      await logsDB.addLog(
+        'Снят варн',
+        moderator || 'Система',
+        discord,
+        `Количество: ${count || 1}. Причина: ${reason || 'Не указана'}`
+      );
       res.json({ success: true, message: 'Варн снят' });
     } else {
       res.status(404).json({ success: false, error: 'Сотрудник не найден' });
@@ -129,11 +217,23 @@ app.delete('/api/staff/:discord/warn', async (req, res) => {
 app.put('/api/staff/:discord/vacation', async (req, res) => {
   try {
     const { discord } = req.params;
-    const { vacation, days } = req.body;
+    const { vacation, days, moderator, moderatorPosition } = req.body;
+    
+    // Проверка прав
+    const permission = await checkManagementPermission(moderator, moderatorPosition, discord);
+    if (!permission.allowed) {
+      return res.status(403).json({ success: false, error: permission.error });
+    }
     
     const success = await staffDB.setVacation(discord, vacation, days);
     
     if (success) {
+      await logsDB.addLog(
+        vacation ? 'Отправлен в отпуск' : 'Возвращен из отпуска',
+        moderator || 'Система',
+        discord,
+        vacation ? `Дней: ${days || 0}` : 'Отпуск завершен'
+      );
       res.json({ success: true, message: 'Статус отпуска обновлен' });
     } else {
       res.status(404).json({ success: false, error: 'Сотрудник не найден' });
@@ -148,11 +248,23 @@ app.put('/api/staff/:discord/vacation', async (req, res) => {
 app.delete('/api/staff/:discord', async (req, res) => {
   try {
     const { discord } = req.params;
-    const { reason, moderator } = req.body;
+    const { reason, moderator, moderatorPosition } = req.body;
+    
+    // Проверка прав
+    const permission = await checkManagementPermission(moderator, moderatorPosition, discord);
+    if (!permission.allowed) {
+      return res.status(403).json({ success: false, error: permission.error });
+    }
     
     const success = await staffDB.deleteStaff(discord, reason);
     
     if (success) {
+      await logsDB.addLog(
+        'Уволен сотрудник',
+        moderator || 'Система',
+        discord,
+        `Причина: ${reason || 'Не указана'}`
+      );
       res.json({ success: true, message: 'Сотрудник уволен' });
     } else {
       res.status(404).json({ success: false, error: 'Сотрудник не найден' });
@@ -167,10 +279,17 @@ app.delete('/api/staff/:discord', async (req, res) => {
 app.put('/api/staff/:discord/restore', async (req, res) => {
   try {
     const { discord } = req.params;
+    const { moderator } = req.body;
     
     const success = await staffDB.updateStatus(discord, 'Активен');
     
     if (success) {
+      await logsDB.addLog(
+        'Восстановлен сотрудник',
+        moderator || 'Система',
+        discord,
+        'Статус изменен на "Активен"'
+      );
       res.json({ success: true, message: 'Сотрудник восстановлен' });
     } else {
       res.status(404).json({ success: false, error: 'Сотрудник не найден' });
@@ -185,11 +304,23 @@ app.put('/api/staff/:discord/restore', async (req, res) => {
 app.delete('/api/staff/:discord/permanent-delete', async (req, res) => {
   try {
     const { discord } = req.params;
-    const { reason } = req.body;
+    const { reason, moderator, moderatorPosition } = req.body;
+    
+    // Проверка прав
+    const permission = await checkManagementPermission(moderator, moderatorPosition, discord);
+    if (!permission.allowed) {
+      return res.status(403).json({ success: false, error: permission.error });
+    }
     
     const success = await staffDB.permanentDelete(discord, reason);
     
     if (success) {
+      await logsDB.addLog(
+        'Удален из базы',
+        moderator || 'Система',
+        discord,
+        `Причина: ${reason || 'Не указана'}. Удаление безвозвратно!`
+      );
       res.json({ success: true, message: 'Сотрудник удален из базы' });
     } else {
       res.status(404).json({ success: false, error: 'Сотрудник не найден' });
@@ -235,9 +366,10 @@ app.post('/api/auth/login', async (req, res) => {
       return res.status(404).json({ success: false, error: 'Вы не являетесь сотрудником' });
     }
     
-    if (!hasPermission(staff.position, 'canAccessAdmin') && 
-        !hasPermission(staff.position, 'canManageStaff')) {
-      return res.status(403).json({ success: false, error: 'У вас нет доступа к панели управления' });
+    // Проверяем права доступа - ZAM.CURATOR и выше
+    const allowedPositions = ['OWNER', 'RAZRAB', 'TEX.ADMIN', 'ADMIN', 'CURATOR', 'ZAM.CURATOR'];
+    if (!allowedPositions.includes(staff.position)) {
+      return res.status(403).json({ success: false, error: 'Доступ к панели управления имеют только заместители кураторов и выше' });
     }
     
     let authenticated = false;
@@ -310,6 +442,17 @@ app.get('/api/applications', async (req, res) => {
   }
 });
 
+// Получить архив заявок (принятые и отклоненные)
+app.get('/api/applications/archive', async (req, res) => {
+  try {
+    const archived = await applicationsDB.getArchivedApplications();
+    res.json({ success: true, data: archived });
+  } catch (error) {
+    console.error('Ошибка получения архива:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // Добавить заявку
 app.post('/api/applications', async (req, res) => {
   try {
@@ -342,8 +485,8 @@ app.post('/api/applications/:id/approve', async (req, res) => {
     
     // Добавляем сотрудника в Supabase
     const staffAdded = await staffDB.addStaff(
-      application.discord || application.allFields['Discord'] || 'unknown',
-      application.minecraft || application.allFields['Minecraft никнейм'] || 'unknown',
+      application.discord || 'unknown',
+      application.minecraft || 'unknown',
       position
     );
     
@@ -351,22 +494,26 @@ app.post('/api/applications/:id/approve', async (req, res) => {
       return res.status(400).json({ success: false, error: 'Не удалось добавить сотрудника' });
     }
     
-    // Обновляем статус в Google Sheets
-    const success = await applicationsDB.approveApplication(id, position, comment, moderator);
+    // Обновляем статус заявки
+    const success = await applicationsDB.approveApplication(id, comment);
     
     if (success) {
-      // Отправляем уведомление в Discord ЛС
-      const discordUsername = application.discord || application.allFields['Discord'] || application.allFields['Ваш дискорд:'];
+      // Добавляем лог
+      await logsDB.addLog(
+        'Заявка принята',
+        moderator || 'Система',
+        application.discord,
+        `Должность: ${position}. ${comment ? 'Комментарий: ' + comment : ''}`
+      );
       
-      if (sendApplicationAcceptedDM && discordUsername) {
+      // Отправляем уведомление в Discord ЛС
+      if (sendApplicationAcceptedDM && application.discord) {
         try {
-          await sendApplicationAcceptedDM(discordUsername, position, comment);
-          console.log(`✅ Уведомление отправлено пользователю ${discordUsername}`);
+          await sendApplicationAcceptedDM(application.discord, position, comment);
+          console.log(`✅ Уведомление отправлено пользователю ${application.discord}`);
         } catch (error) {
           console.error('❌ Ошибка отправки уведомления:', error.message);
         }
-      } else {
-        console.log('⚠️ Бот не готов или Discord username не найден');
       }
       
       res.json({ success: true, message: 'Заявка принята, сотрудник добавлен' });
@@ -385,9 +532,23 @@ app.post('/api/applications/:id/reject', async (req, res) => {
     const { id } = req.params;
     const { comment, moderator } = req.body;
     
-    const success = await applicationsDB.rejectApplication(id, comment, moderator);
+    // Получаем данные заявки перед отклонением
+    const applications = await applicationsDB.getAllApplications();
+    const application = applications.find(app => app.id === id);
+    
+    const success = await applicationsDB.rejectApplication(id, comment);
     
     if (success) {
+      // Добавляем лог
+      if (application) {
+        await logsDB.addLog(
+          'Заявка отклонена',
+          moderator || 'Система',
+          application.discord,
+          comment || 'Без комментария'
+        );
+      }
+      
       res.json({ success: true, message: 'Заявка отклонена' });
     } else {
       res.status(404).json({ success: false, error: 'Заявка не найдена' });

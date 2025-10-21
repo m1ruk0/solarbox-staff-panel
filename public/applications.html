@@ -18,8 +18,15 @@
                     Управление заявками
                 </h1>
                 <p class="text-gray-600">Принимайте решения по заявкам на вступление в персонал</p>
+                <p class="text-sm text-gray-500 mt-2" id="currentUserInfo" style="display: none;">
+                    <i class="fas fa-user mr-1"></i>
+                    Вы вошли как: <strong id="currentUserName"></strong>
+                </p>
             </div>
             <div class="flex gap-3">
+                <button onclick="toggleTheme()" class="btn btn-secondary" id="themeToggle" title="Переключить тему">
+                    <i class="fas fa-moon" id="themeIcon"></i>
+                </button>
                 <a href="index.html" class="btn btn-secondary">
                     <i class="fas fa-users mr-2"></i>
                     Персонал
@@ -162,6 +169,7 @@
     <!-- Контейнер для toast уведомлений -->
     <div id="toastContainer" class="toast-container"></div>
 
+    <script src="theme.js"></script>
     <script src="applications.js"></script>
 </body>
 </html>

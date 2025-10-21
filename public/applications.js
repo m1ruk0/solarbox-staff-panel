@@ -3,6 +3,29 @@ const API_URL = window.location.origin + '/api';
 
 let allApplications = [];
 let currentApplication = null;
+let currentUser = null;
+
+// Проверка авторизации
+function checkAuth() {
+    const userStr = localStorage.getItem('user');
+    if (!userStr) {
+        window.location.href = 'login.html';
+        return false;
+    }
+    
+    currentUser = JSON.parse(userStr);
+    console.log('Текущий пользователь:', currentUser);
+    
+    // Показываем информацию о пользователе
+    const userInfoEl = document.getElementById('currentUserInfo');
+    const userNameEl = document.getElementById('currentUserName');
+    if (userInfoEl && userNameEl && currentUser) {
+        userNameEl.textContent = currentUser.discord || 'Неизвестно';
+        userInfoEl.style.display = 'block';
+    }
+    
+    return true;
+}
 
 // Toast уведомления
 function showToast(message, type = 'success') {
@@ -32,7 +55,9 @@ function showToast(message, type = 'success') {
 
 // Загрузка заявок при старте
 document.addEventListener('DOMContentLoaded', () => {
-    loadApplications();
+    if (checkAuth()) {
+        loadApplications();
+    }
 });
 
 // Загрузка заявок
@@ -59,9 +84,18 @@ async function loadApplications() {
 // Обновление статистики
 function updateStats() {
     const total = allApplications.length;
-    const pending = allApplications.filter(a => a.status === 'pending').length;
-    const approved = allApplications.filter(a => a.status === 'approved').length;
-    const rejected = allApplications.filter(a => a.status === 'rejected').length;
+    const pending = allApplications.filter(a => 
+        a.status === 'pending' || 
+        a.status === 'На рассмотрении'
+    ).length;
+    const approved = allApplications.filter(a => 
+        a.status === 'approved' || 
+        a.status === 'Принята'
+    ).length;
+    const rejected = allApplications.filter(a => 
+        a.status === 'rejected' || 
+        a.status === 'Отклонена'
+    ).length;
     
     document.getElementById('totalApps').textContent = total;
     document.getElementById('pendingApps').textContent = pending;
@@ -84,17 +118,25 @@ function renderApplications(applications) {
     
     // Сортируем: сначала pending, потом остальные
     const sorted = [...applications].sort((a, b) => {
-        if (a.status === 'pending' && b.status !== 'pending') return -1;
-        if (a.status !== 'pending' && b.status === 'pending') return 1;
-        return new Date(b.timestamp) - new Date(a.timestamp);
+        const aPending = a.status === 'pending' || a.status === 'На рассмотрении';
+        const bPending = b.status === 'pending' || b.status === 'На рассмотрении';
+        
+        if (aPending && !bPending) return -1;
+        if (!aPending && bPending) return 1;
+        return new Date(b.created_at || b.timestamp) - new Date(a.created_at || a.timestamp);
     });
     
     const html = `
         <div class="space-y-4">
-            ${sorted.map(app => `
+            ${sorted.map(app => {
+                const isPending = app.status === 'pending' || app.status === 'На рассмотрении';
+                const isApproved = app.status === 'approved' || app.status === 'Принята';
+                const isRejected = app.status === 'rejected' || app.status === 'Отклонена';
+                
+                return `
                 <div class="bg-white rounded-xl p-6 shadow-md border-l-4 ${
-                    app.status === 'pending' ? 'border-yellow-500' :
-                    app.status === 'approved' ? 'border-green-500' :
+                    isPending ? 'border-yellow-500' :
+                    isApproved ? 'border-green-500' :
                     'border-red-500'
                 }">
                     <div class="flex items-start justify-between mb-4">
@@ -102,40 +144,42 @@ function renderApplications(applications) {
                             <div class="flex items-center gap-3 mb-2">
                                 <h3 class="text-2xl font-bold text-gray-900">
                                     <i class="fas fa-gamepad text-green-600 mr-2"></i>
-                                    ${app.minecraft || app.allFields['Minecraft никнейм'] || 'Неизвестно'}
+                                    ${app.minecraft || 'Неизвестно'}
                                 </h3>
                                 <span class="badge ${
-                                    app.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                                    app.status === 'approved' ? 'bg-green-100 text-green-800' :
+                                    isPending ? 'bg-yellow-100 text-yellow-800' :
+                                    isApproved ? 'bg-green-100 text-green-800' :
                                     'bg-red-100 text-red-800'
                                 }">
-                                    ${app.status === 'pending' ? '⏳ Ожидает' :
-                                      app.status === 'approved' ? '✅ Одобрено' :
-                                      '❌ Отклонено'}
+                                    ${isPending ? '⏳ На рассмотрении' :
+                                      isApproved ? '✅ Принята' :
+                                      '❌ Отклонена'}
                                 </span>
+                                ${app.position ? `<span class="badge bg-indigo-100 text-indigo-800">
+                                    <i class="fas fa-briefcase mr-1"></i>${app.position}
+                                </span>` : ''}
                             </div>
                             <p class="text-gray-500 text-sm mb-3">
                                 <i class="fab fa-discord text-indigo-500 mr-2"></i>
-                                ${app.discord || app.allFields['Discord'] || 'Неизвестно'}
+                                ${app.discord || 'Неизвестно'}
                             </p>
+                            ${app.age ? `<p class="text-gray-500 text-sm mb-3">
+                                <i class="fas fa-calendar text-blue-500 mr-2"></i>
+                                Возраст: ${app.age} лет
+                            </p>` : ''}
                         </div>
                         <div class="text-right text-sm text-gray-500">
                             <i class="fas fa-clock mr-1"></i>
-                            ${new Date(app.timestamp).toLocaleString('ru-RU')}
+                            ${new Date(app.created_at || app.timestamp).toLocaleString('ru-RU')}
                         </div>
                     </div>
                     
+                    ${app.experience ? `
                     <div class="bg-gray-50 p-4 rounded-lg mb-4">
-                        <h4 class="font-bold text-gray-800 mb-3">📋 Полная информация из анкеты:</h4>
-                        <div class="space-y-2">
-                            ${Object.entries(app.allFields || {}).map(([key, value]) => `
-                                <div class="border-b border-gray-200 pb-2">
-                                    <p class="text-sm text-gray-600 font-semibold">${key}:</p>
-                                    <p class="text-gray-800">${value}</p>
-                                </div>
-                            `).join('')}
-                        </div>
+                        <h4 class="font-bold text-gray-800 mb-3">📋 Ответы на вопросы:</h4>
+                        <div class="whitespace-pre-wrap text-gray-700">${app.experience}</div>
                     </div>
+                    ` : ''}
                     
                     ${app.status === 'approved' && app.position ? `
                         <div class="bg-green-50 p-3 rounded-lg mb-4">
@@ -153,7 +197,7 @@ function renderApplications(applications) {
                         </div>
                     ` : ''}
                     
-                    ${app.status === 'pending' ? `
+                    ${isPending ? `
                         <div class="flex gap-3">
                             <button onclick="openDecisionModal('${app.id}')" class="btn btn-primary flex-1">
                                 <i class="fas fa-gavel mr-2"></i>
@@ -162,7 +206,7 @@ function renderApplications(applications) {
                         </div>
                     ` : ''}
                 </div>
-            `).join('')}
+            `}).join('')}
         </div>
     `;
     
@@ -212,9 +256,10 @@ async function approveApplication() {
     });
     
     try {
-        // Получаем Discord модератора из localStorage
-        const userStr = localStorage.getItem('user');
-        const moderator = userStr ? JSON.parse(userStr).discord : 'Неизвестный';
+        // Используем текущего пользователя
+        const moderator = currentUser ? currentUser.discord : 'Неизвестный';
+        
+        console.log('Отправка данных:', { position, comment, moderator });
         
         const response = await fetch(`${API_URL}/applications/${currentApplication.id}/approve`, {
             method: 'POST',
@@ -244,9 +289,10 @@ async function rejectApplication() {
     const comment = document.getElementById('decisionComment').value.trim();
     
     try {
-        // Получаем Discord модератора из localStorage
-        const userStr = localStorage.getItem('user');
-        const moderator = userStr ? JSON.parse(userStr).discord : 'Неизвестный';
+        // Используем текущего пользователя
+        const moderator = currentUser ? currentUser.discord : 'Неизвестный';
+        
+        console.log('Отправка данных отклонения:', { comment, moderator });
         
         const response = await fetch(`${API_URL}/applications/${currentApplication.id}/reject`, {
             method: 'POST',

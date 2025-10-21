@@ -46,16 +46,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
 async function loadArchive() {
     try {
-        const response = await fetch(`${API_URL}/applications`);
+        const response = await fetch(`${API_URL}/applications/archive`);
         const data = await response.json();
         
         if (data.success) {
-            // Фильтруем только обработанные заявки
-            allArchive = data.data.filter(app => 
-                app.status === 'Принята' || app.status === 'Отклонена' ||
-                app.status === 'approved' || app.status === 'rejected'
-            );
-            
+            allArchive = data.data;
             renderArchive(allArchive);
             updateStats();
             document.getElementById('loading').style.display = 'none';

@@ -11,6 +11,122 @@ body {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     min-height: 100vh;
     padding: 2rem;
+    transition: background 0.3s ease, color 0.3s ease;
+}
+
+/* Темная тема */
+body.dark-theme {
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+}
+
+body.dark-theme .glass-card,
+body.dark-theme .header-card,
+body.dark-theme .stat-card {
+    background: rgba(30, 30, 46, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #e0e0e0;
+}
+
+body.dark-theme h1,
+body.dark-theme h2,
+body.dark-theme h3,
+body.dark-theme .text-gray-800 {
+    color: #e0e0e0 !important;
+}
+
+body.dark-theme .text-gray-600,
+body.dark-theme .text-gray-700 {
+    color: #b0b0b0 !important;
+}
+
+body.dark-theme .stat-label {
+    color: #b0b0b0 !important;
+}
+
+body.dark-theme .stat-value {
+    color: #e0e0e0 !important;
+}
+
+body.dark-theme .member-card {
+    background: rgba(40, 40, 56, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+body.dark-theme .modal-content {
+    background: rgba(30, 30, 46, 0.98);
+    color: #e0e0e0;
+}
+
+body.dark-theme .input-field {
+    background: rgba(40, 40, 56, 0.8);
+    border-color: rgba(255, 255, 255, 0.2);
+    color: #e0e0e0;
+}
+
+body.dark-theme .input-field:focus {
+    border-color: #667eea;
+    background: rgba(40, 40, 56, 0.95);
+}
+
+body.dark-theme .staff-list {
+    background: rgba(30, 30, 46, 0.95);
+}
+
+body.dark-theme .staff-member {
+    background: rgba(40, 40, 56, 0.95) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+body.dark-theme .staff-member:hover {
+    background: rgba(50, 50, 66, 0.95) !important;
+}
+
+body.dark-theme .search-box,
+body.dark-theme .filter-select {
+    background: rgba(40, 40, 56, 0.8);
+    border-color: rgba(255, 255, 255, 0.2);
+    color: #e0e0e0;
+}
+
+body.dark-theme .search-box::placeholder {
+    color: #808080;
+}
+
+body.dark-theme select option {
+    background: #1e1e2e;
+    color: #e0e0e0;
+}
+
+body.dark-theme .badge {
+    background: rgba(50, 50, 66, 0.8);
+    color: #e0e0e0;
+}
+
+body.dark-theme .role-owner,
+body.dark-theme .role-razrab,
+body.dark-theme .role-tex-admin,
+body.dark-theme .role-admin,
+body.dark-theme .role-curator,
+body.dark-theme .role-zam-curator,
+body.dark-theme .role-gl-staff,
+body.dark-theme .role-moder,
+body.dark-theme .role-ct-helper,
+body.dark-theme .role-helper {
+    filter: brightness(1.2);
+}
+
+body.dark-theme .user-info {
+    background: rgba(40, 40, 56, 0.95);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+body.dark-theme .user-info p,
+body.dark-theme .user-info strong {
+    color: #e0e0e0 !important;
+}
+
+body.dark-theme label {
+    color: #b0b0b0 !important;
 }
 
 .glass-card {

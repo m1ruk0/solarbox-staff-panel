@@ -22,9 +22,12 @@ class ApplicationsDatabaseSupabase {
         age: app.age || '',
         experience: app.experience || '',
         reason: app.reason || '',
+        position: app.position || '',
         status: app.status || 'На рассмотрении',
+        created_at: app.created_at,
         timestamp: new Date(app.created_at).toLocaleString('ru-RU'),
-        comment: app.comment || ''
+        comment: app.comment || '',
+        processed_at: app.processed_at
       }));
     } catch (error) {
       console.error('Ошибка получения заявок:', error);
@@ -35,23 +38,26 @@ class ApplicationsDatabaseSupabase {
   // Добавить заявку
   async addApplication(data) {
     try {
+      const applicationData = {
+        discord: data.discord || '',
+        minecraft: data.minecraft || '',
+        age: data.age || 'Не указан',
+        experience: data.experience || 'Не указан',
+        reason: data.why || data.reason || 'Не указано',
+        position: data.position || 'хелпер',
+        status: 'На рассмотрении'
+      };
+
       const { error } = await supabase
         .from(this.tableName)
-        .insert([{
-          discord: data.discord,
-          minecraft: data.minecraft,
-          age: data.age,
-          experience: data.experience,
-          reason: data.reason,
-          status: 'На рассмотрении'
-        }]);
+        .insert([applicationData]);
 
       if (error) throw error;
 
-      console.log(`✅ Заявка добавлена: ${data.discord}`);
+      console.log(`✅ Заявка добавлена в Supabase: ${data.discord} (${data.minecraft}) - ${data.position}`);
       return true;
     } catch (error) {
-      console.error('Ошибка добавления заявки:', error);
+      console.error('Ошибка добавления заявки в Supabase:', error);
       return false;
     }
   }
@@ -115,6 +121,38 @@ class ApplicationsDatabaseSupabase {
     } catch (error) {
       console.error('Ошибка удаления заявки:', error);
       return false;
+    }
+  }
+
+  // Получить архив заявок (принятые и отклоненные)
+  async getArchivedApplications() {
+    try {
+      const { data, error } = await supabase
+        .from(this.tableName)
+        .select('*')
+        .in('status', ['Принята', 'Отклонена', 'approved', 'rejected'])
+        .order('processed_at', { ascending: false });
+
+      if (error) throw error;
+
+      return (data || []).map(app => ({
+        id: app.id.toString(),
+        discord: app.discord || '',
+        minecraft: app.minecraft || '',
+        age: app.age || '',
+        experience: app.experience || '',
+        reason: app.reason || '',
+        position: app.position || '',
+        status: app.status || 'Неизвестно',
+        created_at: app.created_at,
+        timestamp: new Date(app.created_at).toLocaleString('ru-RU'),
+        processed_at: app.processed_at,
+        processed_timestamp: app.processed_at ? new Date(app.processed_at).toLocaleString('ru-RU') : '',
+        comment: app.comment || ''
+      }));
+    } catch (error) {
+      console.error('Ошибка получения архива заявок:', error);
+      return [];
     }
   }
 }

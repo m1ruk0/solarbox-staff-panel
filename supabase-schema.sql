@@ -33,6 +33,7 @@ CREATE TABLE IF NOT EXISTS applications (
   age TEXT,
   experience TEXT,
   reason TEXT,
+  position TEXT DEFAULT 'хелпер',
   status TEXT DEFAULT 'На рассмотрении',
   comment TEXT,
   processed_at TIMESTAMP,

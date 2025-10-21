@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Список персонала</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .glass-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+        
+        .staff-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            overflow: hidden;
+            border-radius: 12px;
+        }
+        
+        .staff-table thead {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .staff-table th {
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 14px;
+        }
+        
+        .staff-table td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        
+        .staff-table tbody tr:hover {
+            background-color: #f9fafb;
+        }
+        
+        .staff-table tbody tr:last-child td {
+            border-bottom: none;
+        }
+        
+        .role-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .status-active { color: #10b981; }
+        .status-vacation { color: #f59e0b; }
+        .status-fired { color: #ef4444; }
+        
+        .warn-badge {
+            background: #fee2e2;
+            color: #dc2626;
+            padding: 2px 8px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+        }
+        
+        .filter-btn {
+            padding: 8px 16px;
+            border-radius: 8px;
+            border: 2px solid #e5e7eb;
+            background: white;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        
+        .filter-btn.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-color: #667eea;
+        }
+        
+        .search-box {
+            padding: 12px 20px;
+            border-radius: 12px;
+            border: 2px solid #e5e7eb;
+            width: 100%;
+            max-width: 400px;
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+    <div class="max-w-7xl mx-auto">
+        <!-- Заголовок -->
+        <div class="glass-card">
+            <div class="text-center mb-6">
+                <h1 class="text-4xl font-bold text-gray-800 mb-2">
+                    <i class="fas fa-users text-indigo-600 mr-3"></i>
+                    Список персонала
+                </h1>
+                <p class="text-gray-600">Актуальная информация о сотрудниках сервера</p>
+            </div>
+            
+            <!-- Поиск и фильтры -->
+            <div class="flex flex-wrap items-center justify-between gap-4 mb-6">
+                <input type="text" id="searchInput" class="search-box" placeholder="🔍 Поиск по нику...">
+                
+                <div>
+                    <button class="filter-btn active" onclick="filterByStatus('all')">Все</button>
+                    <button class="filter-btn" onclick="filterByStatus('Активен')">Активные</button>
+                    <button class="filter-btn" onclick="filterByStatus('vacation')">В отпуске</button>
+                    <button class="filter-btn" onclick="filterByStatus('Уволен')">Уволенные</button>
+                </div>
+            </div>
+            
+            <!-- Статистика -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                <div class="text-center p-4 bg-blue-50 rounded-lg">
+                    <div class="text-2xl font-bold text-blue-600" id="totalCount">0</div>
+                    <div class="text-sm text-gray-600">Всего</div>
+                </div>
+                <div class="text-center p-4 bg-green-50 rounded-lg">
+                    <div class="text-2xl font-bold text-green-600" id="activeCount">0</div>
+                    <div class="text-sm text-gray-600">Активных</div>
+                </div>
+                <div class="text-center p-4 bg-yellow-50 rounded-lg">
+                    <div class="text-2xl font-bold text-yellow-600" id="vacationCount">0</div>
+                    <div class="text-sm text-gray-600">В отпуске</div>
+                </div>
+                <div class="text-center p-4 bg-red-50 rounded-lg">
+                    <div class="text-2xl font-bold text-red-600" id="warnedCount">0</div>
+                    <div class="text-sm text-gray-600">С варнами</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Таблица -->
+        <div class="glass-card">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-2xl font-bold text-gray-800">
+                    <i class="fas fa-table mr-2"></i>
+                    Таблица персонала
+                </h2>
+                <div class="text-right">
+                    <p class="text-xs text-gray-500" id="lastUpdate">
+                        <i class="fas fa-clock mr-1"></i>
+                        Обновлено: <span id="updateTime">загрузка...</span>
+                    </p>
+                    <p class="text-xs text-gray-400" id="updateInfo">
+                        <i class="fas fa-sync mr-1"></i>
+                        Автообновление каждые 30 сек
+                    </p>
+                </div>
+            </div>
+            
+            <div id="loading" class="loading">
+                <i class="fas fa-spinner fa-spin text-4xl text-indigo-600"></i>
+                <p class="text-gray-600 mt-4">Загрузка данных...</p>
+            </div>
+            
+            <div id="tableContainer" style="display: none;">
+                <div class="overflow-x-auto">
+                    <table class="staff-table">
+                        <thead>
+                            <tr>
+                                <th>Discord</th>
+                                <th>Minecraft</th>
+                                <th>Должность</th>
+                                <th>Варны</th>
+                                <th>Отпуск</th>
+                                <th>Дата найма</th>
+                                <th>Статус</th>
+                            </tr>
+                        </thead>
+                        <tbody id="staffTableBody">
+                            <!-- Данные загружаются через JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <div id="noData" style="display: none;" class="text-center py-12">
+                <i class="fas fa-inbox text-6xl text-gray-300 mb-4"></i>
+                <p class="text-gray-500 text-lg">Нет данных для отображения</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="staff-list.js"></script>
+</body>
+</html>

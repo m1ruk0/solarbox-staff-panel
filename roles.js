@@ -113,10 +113,33 @@ function getAvailablePositions(userPosition) {
     return POSITION_HIERARCHY.slice(maxIndex);
 }
 
+// Может ли модератор управлять этим сотрудником
+function canManageStaffMember(moderatorPosition, targetPosition) {
+    // Нельзя управлять самим собой (проверяется по discord нику в API)
+    
+    // Если у модератора нет прав на управление персоналом
+    if (!hasPermission(moderatorPosition, 'canManageStaff')) {
+        return false;
+    }
+    
+    const moderatorIndex = POSITION_HIERARCHY.indexOf(moderatorPosition);
+    const targetIndex = POSITION_HIERARCHY.indexOf(targetPosition);
+    
+    // Можно управлять только теми, кто ниже по иерархии
+    return moderatorIndex < targetIndex;
+}
+
+// Получить уровень должности (чем меньше число, тем выше должность)
+function getPositionLevel(position) {
+    return POSITION_HIERARCHY.indexOf(position);
+}
+
 module.exports = {
     POSITION_HIERARCHY,
     ROLES,
     hasPermission,
     canPromoteTo,
-    getAvailablePositions
+    getAvailablePositions,
+    canManageStaffMember,
+    getPositionLevel
 };

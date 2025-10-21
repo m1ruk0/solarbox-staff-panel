@@ -93,7 +93,7 @@ class ApplicationsDatabase {
   }
 
   // Добавить новую заявку
-  async addApplication(discord, minecraft, age, experience, why) {
+  async addApplication(data) {
     if (!this.initialized) {
       await this.initialize();
     }
@@ -101,16 +101,28 @@ class ApplicationsDatabase {
     try {
       const today = new Date().toLocaleString('ru-RU');
       
+      // Формируем строку данных: Discord, Minecraft, Возраст, Опыт, Почему, Должность, Дата, Статус
+      const rowData = [
+        data.discord || '',
+        data.minecraft || '',
+        data.age || '',
+        data.experience || '',
+        data.why || '',
+        data.position || 'хелпер',
+        today,
+        'На рассмотрении'
+      ];
+      
       await this.sheets.spreadsheets.values.append({
         spreadsheetId: this.spreadsheetId,
-        range: `${this.sheetName}!A:I`,
+        range: `${this.sheetName}!A:H`,
         valueInputOption: 'USER_ENTERED',
         resource: {
-          values: [[discord, minecraft, age, experience, why, today, 'pending', '', '']]
+          values: [rowData]
         }
       });
 
-      console.log(`✅ Заявка от ${discord} добавлена в Google Sheets`);
+      console.log(`✅ Заявка от ${data.discord} (${data.minecraft}) добавлена в Google Sheets`);
       return true;
     } catch (error) {
       console.error('Ошибка добавления заявки:', error.message);

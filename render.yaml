@@ -1,0 +1,18 @@
+services:
+  # API сервер и веб-панель
+  - type: web
+    name: solarbox-staff-panel
+    env: node
+    buildCommand: npm install
+    startCommand: node api-server-supabase.js
+    envVars:
+      - key: NODE_VERSION
+        value: 18.17.0
+      - key: PORT
+        value: 4000
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_KEY
+        sync: false
+      - key: DISCORD_TOKEN
+        sync: false

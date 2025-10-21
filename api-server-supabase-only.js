@@ -1,13 +1,15 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
-const staffDB = require('./staff-database');
-const applicationsDB = require('./applications-database');
-const passwordsDB = require('./passwords-database');
+const path = require('path');
+
+// Supabase модули
+const staffDB = require('./staff-database-supabase');
+const applicationsDB = require('./applications-database-supabase');
+const passwordsDB = require('./passwords-database-supabase');
 const { hasPermission, canPromoteTo, getAvailablePositions } = require('./roles');
 
 const app = express();
-const path = require('path');
 
 // Middleware
 app.use(cors());
@@ -17,7 +19,15 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
 // ============================================
-// API ENDPOINTS
+// КОРНЕВОЙ МАРШРУТ
+// ============================================
+
+app.get('/', (req, res) => {
+  res.redirect('/landing.html');
+});
+
+// ============================================
+// API ENDPOINTS - ПЕРСОНАЛ
 // ============================================
 
 // Получить всех сотрудников
@@ -150,7 +160,7 @@ app.put('/api/staff/:discord/vacation', async (req, res) => {
   }
 });
 
-// Уволить сотрудника (изменить статус на "Уволен")
+// Уволить сотрудника
 app.delete('/api/staff/:discord', async (req, res) => {
   try {
     const { discord } = req.params;
@@ -169,25 +179,7 @@ app.delete('/api/staff/:discord', async (req, res) => {
   }
 });
 
-// Восстановить сотрудника
-app.put('/api/staff/:discord/restore', async (req, res) => {
-  try {
-    const { discord } = req.params;
-    
-    const success = await staffDB.updateStatus(discord, 'Активен');
-    
-    if (success) {
-      res.json({ success: true, message: 'Сотрудник восстановлен' });
-    } else {
-      res.status(404).json({ success: false, error: 'Сотрудник не найден' });
-    }
-  } catch (error) {
-    console.error('Ошибка восстановления сотрудника:', error);
-    res.status(500).json({ success: false, error: error.message });
-  }
-});
-
-// Удалить сотрудника навсегда из базы
+// Удалить сотрудника навсегда
 app.delete('/api/staff/:discord/permanent-delete', async (req, res) => {
   try {
     const { discord } = req.params;
@@ -228,12 +220,111 @@ app.get('/api/stats', async (req, res) => {
 
 // Health check
 app.get('/api/health', (req, res) => {
-  res.json({ success: true, message: 'API работает' });
+  res.json({ success: true, message: 'API работает на Supabase' });
 });
 
-// Корневой маршрут - перенаправление на landing page
-app.get('/', (req, res) => {
-  res.redirect('/landing.html');
+// ============================================
+// API ENDPOINTS - ЗАЯВКИ
+// ============================================
+
+// Получить все заявки
+app.get('/api/applications', async (req, res) => {
+  try {
+    const applications = await applicationsDB.getAllApplications();
+    res.json({ success: true, data: applications });
+  } catch (error) {
+    console.error('Ошибка получения заявок:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Добавить заявку
+app.post('/api/applications', async (req, res) => {
+  try {
+    const { discord, minecraft, age, experience, why, position } = req.body;
+    
+    // Валидация обязательных полей
+    if (!discord || !minecraft) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Discord и Minecraft ники обязательны' 
+      });
+    }
+    
+    const applicationData = {
+      discord: discord.trim(),
+      minecraft: minecraft.trim(),
+      age: age || 'Не указан',
+      experience: experience || 'Не указан',
+      why: why || 'Не указано',
+      position: position === 'media' ? 'медия' : 'хелпер'
+    };
+    
+    const success = await applicationsDB.addApplication(applicationData);
+    
+    if (success) {
+      console.log(`✅ Заявка принята: ${applicationData.discord} -> ${applicationData.minecraft} (${applicationData.position})`);
+      res.json({ 
+        success: true, 
+        message: 'Заявка успешно отправлена!',
+        data: applicationData
+      });
+    } else {
+      res.status(500).json({ success: false, error: 'Не удалось добавить заявку' });
+    }
+  } catch (error) {
+    console.error('Ошибка API при добавлении заявки:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Одобрить заявку
+app.post('/api/applications/:id/approve', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { position, comment } = req.body;
+    
+    // Получаем заявку
+    const applications = await applicationsDB.getAllApplications();
+    const app = applications.find(a => a.id === id);
+    
+    if (!app) {
+      return res.status(404).json({ success: false, error: 'Заявка не найдена' });
+    }
+    
+    // Добавляем сотрудника
+    const staffSuccess = await staffDB.addStaff(app.discord, app.minecraft, position || 'хелпер');
+    
+    if (staffSuccess) {
+      // Обновляем статус заявки
+      await applicationsDB.approveApplication(id, comment);
+      res.json({ success: true, message: 'Заявка одобрена' });
+    } else {
+      res.status(500).json({ success: false, error: 'Не удалось добавить сотрудника' });
+    }
+  } catch (error) {
+    console.error('Ошибка одобрения заявки:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Отклонить заявку
+app.post('/api/applications/:id/reject', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { comment } = req.body;
+    
+    const success = await applicationsDB.rejectApplication(id, comment);
+    
+    if (success) {
+      res.json({ success: true, message: 'Заявка отклонена' });
+    } else {
+      res.status(404).json({ success: false, error: 'Заявка не найдена' });
+    }
+  } catch (error) {
+    console.error('Ошибка отклонения заявки:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
 });
 
 // ============================================
@@ -315,109 +406,7 @@ app.post('/api/auth/security-question', async (req, res) => {
 });
 
 // ============================================
-// ЗАЯВКИ (Google Sheets)
-// ============================================
-
-// Получить все заявки
-app.get('/api/applications', async (req, res) => {
-  try {
-    const applications = await applicationsDB.getAllApplications();
-    res.json({ success: true, data: applications });
-  } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
-  }
-});
-
-// Добавить заявку
-app.post('/api/applications', async (req, res) => {
-  try {
-    const { discord, minecraft, age, experience, why, position } = req.body;
-    
-    // Валидация обязательных полей
-    if (!discord || !minecraft) {
-      return res.status(400).json({ 
-        success: false, 
-        error: 'Discord и Minecraft ники обязательны' 
-      });
-    }
-    
-    const applicationData = {
-      discord: discord.trim(),
-      minecraft: minecraft.trim(),
-      age: age || 'Не указан',
-      experience: experience || 'Не указан',
-      why: why || 'Не указано',
-      position: position === 'media' ? 'медия' : 'хелпер'
-    };
-    
-    const success = await applicationsDB.addApplication(applicationData);
-    
-    if (success) {
-      console.log(`✅ Заявка принята: ${applicationData.discord} -> ${applicationData.minecraft}`);
-      res.json({ 
-        success: true, 
-        message: 'Заявка успешно отправлена!',
-        data: applicationData
-      });
-    } else {
-      res.status(500).json({ success: false, error: 'Не удалось добавить заявку' });
-    }
-  } catch (error) {
-    console.error('Ошибка API при добавлении заявки:', error);
-    res.status(500).json({ success: false, error: error.message });
-  }
-});
-
-// Одобрить заявку
-app.post('/api/applications/:id/approve', async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { position, comment } = req.body;
-    
-    // Получаем все заявки
-    const applications = await applicationsDB.getAllApplications();
-    const app = applications.find(a => a.id === id);
-    
-    if (!app) {
-      return res.status(404).json({ success: false, error: 'Заявка не найдена' });
-    }
-    
-    // Добавляем сотрудника в базу персонала
-    const staffSuccess = await staffDB.addStaff(app.discord, app.minecraft, position);
-    
-    if (staffSuccess) {
-      // Обновляем статус заявки в Google Sheets
-      await applicationsDB.approveApplication(id, position, comment);
-      res.json({ success: true, message: 'Заявка одобрена' });
-    } else {
-      res.status(500).json({ success: false, error: 'Не удалось добавить сотрудника' });
-    }
-  } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
-  }
-});
-
-// Отклонить заявку
-app.post('/api/applications/:id/reject', async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { comment } = req.body;
-    
-    // Обновляем статус в Google Sheets
-    const success = await applicationsDB.rejectApplication(id, comment);
-    
-    if (success) {
-      res.json({ success: true, message: 'Заявка отклонена' });
-    } else {
-      res.status(404).json({ success: false, error: 'Заявка не найдена' });
-    }
-  } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
-  }
-});
-
-// ============================================
-// АДМИН ПАНЕЛЬ ПАРОЛЕЙ (только для OWNER)
+// АДМИН ПАНЕЛЬ ПАРОЛЕЙ
 // ============================================
 
 // Получить всех пользователей
@@ -469,6 +458,8 @@ const PORT = process.env.API_PORT || 4000;
 app.listen(PORT, () => {
   console.log(`🚀 API сервер запущен на порту ${PORT}`);
   console.log(`📡 API доступен по адресу: http://localhost:${PORT}/api`);
+  console.log(`🗄️  База данных: Supabase`);
+  console.log(`🌐 Главная страница: http://localhost:${PORT}/`);
 });
 
 module.exports = app;
