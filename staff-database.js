@@ -34,7 +34,7 @@ class StaffDatabase {
     try {
       const response = await this.sheets.spreadsheets.values.get({
         spreadsheetId: this.spreadsheetId,
-        range: 'Персонал!A2:G', // Discord, Minecraft, Должность, Варны, Дата найма, Статус, Отпуск
+        range: 'Заявки!A2:G', // Discord, Minecraft, Должность, Варны, Дата найма, Статус, Отпуск
       });
 
       const rows = response.data.values || [];
@@ -72,7 +72,7 @@ class StaffDatabase {
       
       await this.sheets.spreadsheets.values.append({
         spreadsheetId: this.spreadsheetId,
-        range: 'Персонал!A:G',
+        range: 'Заявки!A:G',
         valueInputOption: 'USER_ENTERED',
         resource: {
           values: [[discordUsername, minecraftNick, position, 0, today, 'Активен', 'Нет']]
@@ -136,7 +136,7 @@ class StaffDatabase {
       // Находим строку
       const response = await this.sheets.spreadsheets.values.get({
         spreadsheetId: this.spreadsheetId,
-        range: 'Персонал!A:A',
+        range: 'Заявки!A:A',
       });
 
       const rows = response.data.values || [];
@@ -157,7 +157,7 @@ class StaffDatabase {
       // Обновляем отпуск и дату окончания
       await this.sheets.spreadsheets.values.update({
         spreadsheetId: this.spreadsheetId,
-        range: `Персонал!G${rowIndex + 1}:H${rowIndex + 1}`,
+        range: `Заявки!G${rowIndex + 1}:H${rowIndex + 1}`,
         valueInputOption: 'USER_ENTERED',
         resource: {
           values: [[onVacation ? 'Да' : 'Нет', endDate]]
@@ -203,7 +203,7 @@ class StaffDatabase {
       // Находим строку
       const response = await this.sheets.spreadsheets.values.get({
         spreadsheetId: this.spreadsheetId,
-        range: 'Персонал!A:A',
+        range: 'Заявки!A:A',
       });
 
       const rows = response.data.values || [];
@@ -251,7 +251,7 @@ class StaffDatabase {
       // Находим строку с пользователем
       const response = await this.sheets.spreadsheets.values.get({
         spreadsheetId: this.spreadsheetId,
-        range: 'Персонал!A:A',
+        range: 'Заявки!A:A',
       });
 
       const rows = response.data.values || [];
@@ -267,7 +267,7 @@ class StaffDatabase {
       // Обновляем значение (rowIndex + 1 потому что API использует 1-индексацию)
       await this.sheets.spreadsheets.values.update({
         spreadsheetId: this.spreadsheetId,
-        range: `Персонал!${column}${rowIndex + 1}`,
+        range: `Заявки!${column}${rowIndex + 1}`,
         valueInputOption: 'USER_ENTERED',
         resource: {
           values: [[value]]

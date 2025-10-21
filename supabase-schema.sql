@@ -63,6 +63,11 @@ ALTER TABLE applications ENABLE ROW LEVEL SECURITY;
 ALTER TABLE logs ENABLE ROW LEVEL SECURITY;
 
 -- Политики доступа (разрешаем все операции для service_role)
+DROP POLICY IF EXISTS "Enable all for service role" ON staff;
+DROP POLICY IF EXISTS "Enable all for service role" ON passwords;
+DROP POLICY IF EXISTS "Enable all for service role" ON applications;
+DROP POLICY IF EXISTS "Enable all for service role" ON logs;
+
 CREATE POLICY "Enable all for service role" ON staff FOR ALL USING (true);
 CREATE POLICY "Enable all for service role" ON passwords FOR ALL USING (true);
 CREATE POLICY "Enable all for service role" ON applications FOR ALL USING (true);
