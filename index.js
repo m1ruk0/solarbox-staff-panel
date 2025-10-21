@@ -2,7 +2,7 @@ require('dotenv').config();
 const { Client, GatewayIntentBits, EmbedBuilder, SlashCommandBuilder, REST, Routes, MessageFlags, ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder: ModalActionRowBuilder } = require('discord.js');
 const config = require('./config');
 const { createWebhookServer } = require('./webhook-server');
-const staffDB = require('./staff-database');
+const staffDB = require('./staff-database-supabase');
 const { handleStaffButton, handleStaffModal } = require('./staff-handlers');
 
 // Создаем клиента Discord

@@ -1,5 +1,5 @@
 const { ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder, EmbedBuilder, MessageFlags } = require('discord.js');
-const staffDB = require('./staff-database');
+const staffDB = require('./staff-database-supabase');
 
 // Обработчики кнопок панели управления персоналом
 async function handleStaffButton(interaction) {
@@ -13,7 +13,7 @@ async function handleStaffButton(interaction) {
 
     const discordInput = new TextInputBuilder()
       .setCustomId('discord_username')
-      .setLabel('Discord ник (без #0000)')
+      .setLabel('Discord ник')
       .setStyle(TextInputStyle.Short)
       .setPlaceholder('username')
       .setRequired(true);
