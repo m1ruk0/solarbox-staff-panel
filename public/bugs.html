@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Сообщить о баге</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="sidebar.css">
+</head>
+<body>
+    <!-- Заголовок -->
+    <div class="header-card">
+        <div class="flex items-center justify-between flex-wrap gap-4">
+            <div>
+                <h1 class="text-4xl font-bold text-gray-800 mb-2">
+                    <i class="fas fa-bug text-red-600 mr-3"></i>
+                    Сообщить о баге
+                </h1>
+                <p class="text-gray-600">Помогите нам улучшить сервер! Опишите найденную проблему.</p>
+            </div>
+            <div class="flex gap-3">
+                <a href="bugs-admin.html" class="btn btn-secondary" id="adminBugsBtn" style="display: none;">
+                    <i class="fas fa-list mr-2"></i>
+                    История багов
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Форма отправки бага -->
+    <div class="glass-card">
+        <form onsubmit="submitBug(event)" id="bugForm">
+            <div class="mb-4">
+                <label class="block text-gray-700 font-semibold mb-2">
+                    <i class="fab fa-discord text-indigo-600 mr-2"></i>
+                    Discord ник *
+                </label>
+                <input type="text" id="discord" placeholder="username" class="input-field" required>
+            </div>
+
+            <div class="mb-4">
+                <label class="block text-gray-700 font-semibold mb-2">
+                    <i class="fas fa-gamepad text-green-600 mr-2"></i>
+                    Minecraft ник (необязательно)
+                </label>
+                <input type="text" id="minecraft" placeholder="Player123" class="input-field">
+            </div>
+
+            <div class="mb-4">
+                <label class="block text-gray-700 font-semibold mb-2">
+                    <i class="fas fa-heading text-blue-600 mr-2"></i>
+                    Название бага *
+                </label>
+                <input type="text" id="title" placeholder="Кратко опишите проблему" class="input-field" required>
+            </div>
+
+            <div class="mb-4">
+                <label class="block text-gray-700 font-semibold mb-2">
+                    <i class="fas fa-align-left text-purple-600 mr-2"></i>
+                    Подробное описание *
+                </label>
+                <textarea id="description" rows="6" placeholder="Опишите баг максимально подробно:&#10;- Что произошло?&#10;- Как воспроизвести?&#10;- Что ожидалось?" class="input-field" required></textarea>
+            </div>
+
+            <div class="mb-4">
+                <label class="block text-gray-700 font-semibold mb-2">
+                    <i class="fas fa-exclamation-circle text-orange-600 mr-2"></i>
+                    Приоритет
+                </label>
+                <select id="priority" class="input-field">
+                    <option value="Низкий">🟢 Низкий - Косметическая проблема</option>
+                    <option value="Средний" selected>🟡 Средний - Мешает игре</option>
+                    <option value="Высокий">🟠 Высокий - Серьезная проблема</option>
+                    <option value="Критический">🔴 Критический - Игра невозможна</option>
+                </select>
+            </div>
+
+            <div class="flex gap-3">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-paper-plane mr-2"></i>
+                    Отправить баг
+                </button>
+                <button type="button" onclick="resetForm()" class="btn btn-secondary">
+                    <i class="fas fa-redo mr-2"></i>
+                    Очистить
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Информация -->
+    <div class="glass-card">
+        <h3 class="text-xl font-bold text-gray-800 mb-3">
+            <i class="fas fa-info-circle text-blue-600 mr-2"></i>
+            Как правильно сообщать о багах?
+        </h3>
+        <ul class="space-y-2 text-gray-700">
+            <li class="flex items-start">
+                <i class="fas fa-check text-green-600 mr-2 mt-1"></i>
+                <span><strong>Будьте конкретны:</strong> Четко опишите что произошло</span>
+            </li>
+            <li class="flex items-start">
+                <i class="fas fa-check text-green-600 mr-2 mt-1"></i>
+                <span><strong>Шаги воспроизведения:</strong> Как повторить баг?</span>
+            </li>
+            <li class="flex items-start">
+                <i class="fas fa-check text-green-600 mr-2 mt-1"></i>
+                <span><strong>Скриншоты:</strong> Если возможно, опишите что видно на экране</span>
+            </li>
+            <li class="flex items-start">
+                <i class="fas fa-check text-green-600 mr-2 mt-1"></i>
+                <span><strong>Приоритет:</strong> Оцените насколько серьезна проблема</span>
+            </li>
+        </ul>
+    </div>
+
+    <!-- Контейнер для toast уведомлений -->
+    <div id="toastContainer" class="toast-container"></div>
+
+    <script src="snow.js"></script>
+    <script src="theme.js"></script>
+    <script src="sidebar.js"></script>
+    <script src="bugs.js"></script>
+</body>
+</html>

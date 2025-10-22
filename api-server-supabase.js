@@ -6,6 +6,7 @@ const staffDB = require('./staff-database-supabase');
 const applicationsDB = require('./applications-database-supabase'); // Supabase для заявок!
 const passwordsDB = require('./passwords-database-supabase');
 const logsDB = require('./logs-database-supabase');
+const bugsDB = require('./bugs-database-supabase');
 const { hasPermission, canPromoteTo, getAvailablePositions, canManageStaffMember } = require('./roles');
 
 // Discord бот (опционально)
@@ -704,6 +705,87 @@ app.get('/api/logs/:moderator', async (req, res) => {
     res.json({ success: true, data: logs });
   } catch (error) {
     console.error('Ошибка получения логов модератора:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// ============================================
+// БАГИ
+// ============================================
+
+// Получить все баги
+app.get('/api/bugs', async (req, res) => {
+  try {
+    const bugs = await bugsDB.getAllBugs();
+    res.json({ success: true, data: bugs });
+  } catch (error) {
+    console.error('Ошибка получения багов:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Добавить баг
+app.post('/api/bugs', async (req, res) => {
+  try {
+    const success = await bugsDB.addBug(req.body);
+    
+    if (success) {
+      res.json({ success: true, message: 'Баг отправлен! Спасибо за помощь!' });
+    } else {
+      res.status(400).json({ success: false, error: 'Не удалось отправить баг' });
+    }
+  } catch (error) {
+    console.error('Ошибка добавления бага:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Обновить статус бага
+app.put('/api/bugs/:id/status', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status, resolvedBy, adminComment, moderatorPosition } = req.body;
+    
+    // Проверка прав (ZAM.CURATOR и выше)
+    const allowedPositions = ['OWNER', 'RAZRAB', 'TEX.ADMIN', 'ADMIN', 'CURATOR', 'ZAM.CURATOR'];
+    if (!allowedPositions.includes(moderatorPosition)) {
+      return res.status(403).json({ success: false, error: 'Недостаточно прав для управления багами' });
+    }
+    
+    const success = await bugsDB.updateBugStatus(id, status, resolvedBy, adminComment);
+    
+    if (success) {
+      res.json({ success: true, message: 'Статус бага обновлен' });
+    } else {
+      res.status(404).json({ success: false, error: 'Баг не найден' });
+    }
+  } catch (error) {
+    console.error('Ошибка обновления статуса бага:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Удалить баг
+app.delete('/api/bugs/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { moderatorPosition } = req.body;
+    
+    // Проверка прав (только ADMIN и выше)
+    const allowedPositions = ['OWNER', 'RAZRAB', 'TEX.ADMIN', 'ADMIN'];
+    if (!allowedPositions.includes(moderatorPosition)) {
+      return res.status(403).json({ success: false, error: 'Недостаточно прав для удаления багов' });
+    }
+    
+    const success = await bugsDB.deleteBug(id);
+    
+    if (success) {
+      res.json({ success: true, message: 'Баг удален' });
+    } else {
+      res.status(404).json({ success: false, error: 'Баг не найден' });
+    }
+  } catch (error) {
+    console.error('Ошибка удаления бага:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 });

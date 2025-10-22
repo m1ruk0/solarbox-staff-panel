@@ -49,6 +49,18 @@ function createSidebar() {
                 </div>
                 
                 <div class="sidebar-section">
+                    <div class="sidebar-section-title">Другое</div>
+                    <a href="bugs.html" class="sidebar-link ${currentPage === 'bugs.html' ? 'active' : ''}">
+                        <i class="fas fa-bug"></i>
+                        <span>Сообщить о баге</span>
+                    </a>
+                    <a href="bugs-admin.html" class="sidebar-link ${currentPage === 'bugs-admin.html' ? 'active' : ''}" id="bugsAdminLink" style="display: none;">
+                        <i class="fas fa-list"></i>
+                        <span>История багов</span>
+                    </a>
+                </div>
+                
+                <div class="sidebar-section">
                     <div class="sidebar-section-title">Настройки</div>
                     <a href="#" onclick="toggleTheme(); return false;" class="sidebar-link">
                         <i class="fas fa-moon" id="sidebarThemeIcon"></i>
@@ -108,11 +120,20 @@ function toggleSidebar() {
 function checkAdminRights() {
     const user = JSON.parse(localStorage.getItem('user') || '{}');
     const adminPositions = ['OWNER', 'RAZRAB', 'TEX.ADMIN', 'ADMIN'];
+    const moderatorPositions = ['OWNER', 'RAZRAB', 'TEX.ADMIN', 'ADMIN', 'CURATOR', 'ZAM.CURATOR'];
     
     if (adminPositions.includes(user.position)) {
         const adminSection = document.getElementById('adminSection');
         if (adminSection) {
             adminSection.style.display = 'block';
+        }
+    }
+    
+    // Показываем историю багов для ZAM.CURATOR и выше
+    if (moderatorPositions.includes(user.position)) {
+        const bugsAdminLink = document.getElementById('bugsAdminLink');
+        if (bugsAdminLink) {
+            bugsAdminLink.style.display = 'flex';
         }
     }
 }

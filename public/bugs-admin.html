@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>История багов</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="sidebar.css">
+</head>
+<body>
+    <!-- Заголовок -->
+    <div class="header-card">
+        <div class="flex items-center justify-between flex-wrap gap-4">
+            <div>
+                <h1 class="text-4xl font-bold text-gray-800 mb-2">
+                    <i class="fas fa-bug text-red-600 mr-3"></i>
+                    История багов
+                </h1>
+                <p class="text-gray-600">Управление сообщениями о багах от игроков</p>
+            </div>
+            <div class="flex gap-3">
+                <a href="bugs.html" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left mr-2"></i>
+                    Назад
+                </a>
+                <button onclick="loadBugs()" class="btn btn-primary">
+                    <i class="fas fa-sync mr-2"></i>
+                    Обновить
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Статистика -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="stat-label">Всего багов</p>
+                    <p class="stat-value" id="totalBugs">0</p>
+                </div>
+                <div class="stat-icon stat-icon-blue">
+                    <i class="fas fa-bug"></i>
+                </div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="stat-label">Новые</p>
+                    <p class="stat-value" id="newBugs">0</p>
+                </div>
+                <div class="stat-icon stat-icon-yellow">
+                    <i class="fas fa-exclamation-circle"></i>
+                </div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="stat-label">Решено</p>
+                    <p class="stat-value" id="resolvedBugs">0</p>
+                </div>
+                <div class="stat-icon stat-icon-green">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="stat-label">Критических</p>
+                    <p class="stat-value" id="criticalBugs">0</p>
+                </div>
+                <div class="stat-icon stat-icon-red">
+                    <i class="fas fa-fire"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Фильтры -->
+    <div class="glass-card mb-6">
+        <div class="flex flex-wrap gap-3">
+            <select id="statusFilter" onchange="filterBugs()" class="input-field" style="flex: 1; min-width: 200px;">
+                <option value="all">Все статусы</option>
+                <option value="Новый">Новые</option>
+                <option value="В работе">В работе</option>
+                <option value="Решен">Решенные</option>
+                <option value="Отклонен">Отклоненные</option>
+            </select>
+            <select id="priorityFilter" onchange="filterBugs()" class="input-field" style="flex: 1; min-width: 200px;">
+                <option value="all">Все приоритеты</option>
+                <option value="Критический">🔴 Критический</option>
+                <option value="Высокий">🟠 Высокий</option>
+                <option value="Средний">🟡 Средний</option>
+                <option value="Низкий">🟢 Низкий</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- Список багов -->
+    <div id="loading" class="text-center py-12">
+        <i class="fas fa-spinner fa-spin text-4xl text-indigo-600"></i>
+        <p class="text-gray-600 mt-4">Загрузка багов...</p>
+    </div>
+
+    <div id="bugsContainer" style="display: none;"></div>
+
+    <div id="noBugs" style="display: none;" class="text-center py-12">
+        <i class="fas fa-check-circle text-6xl text-green-600 mb-4"></i>
+        <p class="text-gray-600 text-xl">Багов не найдено!</p>
+    </div>
+
+    <!-- Модальное окно управления багом -->
+    <div id="bugModal" class="modal">
+        <div class="modal-content" style="max-width: 600px;">
+            <div class="modal-header">
+                <h3 class="text-2xl font-bold">Управление багом</h3>
+                <button onclick="closeBugModal()" class="text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-times text-2xl"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-4">
+                    <p class="text-sm text-gray-600">Баг #<span id="bugId"></span></p>
+                    <h4 class="text-xl font-bold text-gray-800" id="bugTitle"></h4>
+                </div>
+                
+                <div class="mb-4">
+                    <p class="text-sm text-gray-600">От: <strong id="bugDiscord"></strong></p>
+                    <p class="text-sm text-gray-600">Minecraft: <strong id="bugMinecraft"></strong></p>
+                    <p class="text-sm text-gray-600">Приоритет: <strong id="bugPriority"></strong></p>
+                </div>
+                
+                <div class="mb-4">
+                    <label class="block text-gray-700 font-semibold mb-2">Описание:</label>
+                    <p class="text-gray-700 whitespace-pre-wrap" id="bugDescription"></p>
+                </div>
+                
+                <div class="mb-4">
+                    <label class="block text-gray-700 font-semibold mb-2">
+                        <i class="fas fa-tasks text-indigo-600 mr-2"></i>
+                        Статус
+                    </label>
+                    <select id="bugStatus" class="input-field">
+                        <option value="Новый">Новый</option>
+                        <option value="В работе">В работе</option>
+                        <option value="Решен">Решен</option>
+                        <option value="Отклонен">Отклонен</option>
+                    </select>
+                </div>
+                
+                <div class="mb-4">
+                    <label class="block text-gray-700 font-semibold mb-2">
+                        <i class="fas fa-comment text-blue-600 mr-2"></i>
+                        Комментарий администратора
+                    </label>
+                    <textarea id="bugComment" rows="3" class="input-field" placeholder="Опишите решение или причину отклонения..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button onclick="closeBugModal()" class="btn btn-secondary">
+                    Отмена
+                </button>
+                <button onclick="updateBugStatus()" class="btn btn-primary">
+                    <i class="fas fa-save mr-2"></i>
+                    Сохранить
+                </button>
+                <button onclick="deleteBug()" class="btn btn-danger" id="deleteBugBtn">
+                    <i class="fas fa-trash mr-2"></i>
+                    Удалить
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Контейнер для toast уведомлений -->
+    <div id="toastContainer" class="toast-container"></div>
+
+    <script src="snow.js"></script>
+    <script src="theme.js"></script>
+    <script src="sidebar.js"></script>
+    <script src="bugs-admin.js"></script>
+</body>
+</html>
