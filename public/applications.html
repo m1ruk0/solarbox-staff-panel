@@ -24,16 +24,9 @@
                 </p>
             </div>
             <div class="flex gap-3">
-                <button onclick="toggleTheme()" class="btn btn-secondary" id="themeToggle" title="Переключить тему">
-                    <i class="fas fa-moon" id="themeIcon"></i>
-                </button>
                 <a href="index.html" class="btn btn-secondary">
-                    <i class="fas fa-users mr-2"></i>
-                    Персонал
-                </a>
-                <a href="applications-archive.html" class="btn btn-secondary">
-                    <i class="fas fa-archive mr-2"></i>
-                    Архив
+                    <i class="fas fa-arrow-left mr-2"></i>
+                    Назад
                 </a>
                 <button onclick="loadApplications()" class="btn btn-primary">
                     <i class="fas fa-sync mr-2"></i>
@@ -169,6 +162,7 @@
     <!-- Контейнер для toast уведомлений -->
     <div id="toastContainer" class="toast-container"></div>
 
+    <script src="snow.js"></script>
     <script src="theme.js"></script>
     <script src="applications.js"></script>
 </body>

@@ -300,6 +300,78 @@ app.put('/api/staff/:discord/restore', async (req, res) => {
   }
 });
 
+// Добавить солярики
+app.post('/api/staff/:discord/solariki/add', async (req, res) => {
+  try {
+    const { discord } = req.params;
+    const { amount, moderator, moderatorPosition } = req.body;
+    
+    // Проверка прав (ZAM.CURATOR и выше)
+    const allowedPositions = ['OWNER', 'RAZRAB', 'TEX.ADMIN', 'ADMIN', 'CURATOR', 'ZAM.CURATOR'];
+    if (!allowedPositions.includes(moderatorPosition)) {
+      return res.status(403).json({ success: false, error: 'Недостаточно прав для выдачи соляриков' });
+    }
+    
+    // Защита: нельзя выдавать себе (кроме OWNER)
+    if (discord.toLowerCase() === moderator.toLowerCase() && moderatorPosition !== 'OWNER') {
+      return res.status(403).json({ success: false, error: 'Нельзя выдавать солярики самому себе' });
+    }
+    
+    const success = await staffDB.addSolariki(discord, parseInt(amount));
+    
+    if (success) {
+      await logsDB.addLog(
+        'Выданы солярики',
+        moderator,
+        discord,
+        `Количество: ${amount}`
+      );
+      res.json({ success: true, message: 'Солярики выданы' });
+    } else {
+      res.status(404).json({ success: false, error: 'Сотрудник не найден' });
+    }
+  } catch (error) {
+    console.error('Ошибка выдачи соляриков:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Снять солярики
+app.post('/api/staff/:discord/solariki/remove', async (req, res) => {
+  try {
+    const { discord } = req.params;
+    const { amount, moderator, moderatorPosition } = req.body;
+    
+    // Проверка прав (ZAM.CURATOR и выше)
+    const allowedPositions = ['OWNER', 'RAZRAB', 'TEX.ADMIN', 'ADMIN', 'CURATOR', 'ZAM.CURATOR'];
+    if (!allowedPositions.includes(moderatorPosition)) {
+      return res.status(403).json({ success: false, error: 'Недостаточно прав для снятия соляриков' });
+    }
+    
+    // Защита: нельзя снимать у себя (кроме OWNER)
+    if (discord.toLowerCase() === moderator.toLowerCase() && moderatorPosition !== 'OWNER') {
+      return res.status(403).json({ success: false, error: 'Нельзя снимать солярики у самого себя' });
+    }
+    
+    const success = await staffDB.removeSolariki(discord, parseInt(amount));
+    
+    if (success) {
+      await logsDB.addLog(
+        'Сняты солярики',
+        moderator,
+        discord,
+        `Количество: ${amount}`
+      );
+      res.json({ success: true, message: 'Солярики сняты' });
+    } else {
+      res.status(404).json({ success: false, error: 'Сотрудник не найден' });
+    }
+  } catch (error) {
+    console.error('Ошибка снятия соляриков:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // Удалить навсегда
 app.delete('/api/staff/:discord/permanent-delete', async (req, res) => {
   try {

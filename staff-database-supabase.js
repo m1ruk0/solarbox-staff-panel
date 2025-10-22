@@ -22,7 +22,8 @@ class StaffDatabaseSupabase {
         warns: s.warns || 0,
         vacation: s.vacation ? 'Да' : 'Нет',
         status: s.status || 'Активен',
-        hireDate: s.hire_date || new Date().toLocaleDateString('ru-RU')
+        hireDate: s.hire_date || new Date().toLocaleDateString('ru-RU'),
+        solariki: s.solariki || 0
       }));
     } catch (error) {
       console.error('Ошибка получения персонала:', error);
@@ -42,7 +43,8 @@ class StaffDatabaseSupabase {
           warns: 0,
           vacation: false,
           status: 'Активен',
-          hire_date: new Date().toLocaleDateString('ru-RU')
+          hire_date: new Date().toLocaleDateString('ru-RU'),
+          solariki: 0
         }])
         .select();
 
@@ -235,6 +237,62 @@ class StaffDatabaseSupabase {
       return true;
     } catch (error) {
       console.error('Ошибка удаления:', error);
+      return false;
+    }
+  }
+
+  // Добавить солярики
+  async addSolariki(discord, amount) {
+    try {
+      const { data, error } = await supabase
+        .from(this.tableName)
+        .select('solariki')
+        .ilike('discord', discord)
+        .single();
+
+      if (error) throw error;
+
+      const newAmount = (data.solariki || 0) + amount;
+
+      const { error: updateError } = await supabase
+        .from(this.tableName)
+        .update({ solariki: newAmount })
+        .ilike('discord', discord);
+
+      if (updateError) throw updateError;
+
+      console.log(`✅ ${discord} получил ${amount} соляриков (всего: ${newAmount})`);
+      return true;
+    } catch (error) {
+      console.error('Ошибка добавления соляриков:', error);
+      return false;
+    }
+  }
+
+  // Снять солярики
+  async removeSolariki(discord, amount) {
+    try {
+      const { data, error } = await supabase
+        .from(this.tableName)
+        .select('solariki')
+        .ilike('discord', discord)
+        .single();
+
+      if (error) throw error;
+
+      const newAmount = Math.max(0, (data.solariki || 0) - amount);
+
+      const { error: updateError } = await supabase
+        .from(this.tableName)
+        .update({ solariki: newAmount })
+        .ilike('discord', discord);
+
+      if (updateError) throw updateError;
+
+      console.log(`✅ У ${discord} снято ${amount} соляриков (осталось: ${newAmount})`);
+      return true;
+    } catch (error) {
+      console.error('Ошибка снятия соляриков:', error);
       return false;
     }
   }

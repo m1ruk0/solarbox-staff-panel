@@ -1,0 +1,306 @@
+/* Боковая панель навигации - динамическая */
+.sidebar {
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: 80px;
+    height: 100vh;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-right: 1px solid rgba(255, 255, 255, 0.3);
+    box-shadow: 4px 0 20px rgba(0, 0, 0, 0.1);
+    padding: 2rem 0;
+    z-index: 1000;
+    overflow-y: auto;
+    overflow-x: hidden;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.sidebar:hover,
+.sidebar.expanded {
+    width: 280px;
+}
+
+body.dark-theme .sidebar {
+    background: rgba(30, 30, 46, 0.95);
+    border-right: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.sidebar-header {
+    padding: 0 1.5rem 1.5rem;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    margin-bottom: 1.5rem;
+}
+
+body.dark-theme .sidebar-header {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.sidebar-logo {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #667eea;
+}
+
+.sidebar-logo i {
+    font-size: 1.5rem;
+}
+
+.sidebar-nav {
+    padding: 0 1rem;
+}
+
+.sidebar-section {
+    margin-bottom: 1.5rem;
+}
+
+.sidebar-section-title {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    color: #9ca3af;
+    padding: 0 0.5rem;
+    margin-bottom: 0.5rem;
+    letter-spacing: 0.05em;
+}
+
+body.dark-theme .sidebar-section-title {
+    color: #6b7280;
+}
+
+.sidebar-link {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    margin-bottom: 0.25rem;
+    border-radius: 0.75rem;
+    color: #4b5563;
+    text-decoration: none;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+body.dark-theme .sidebar-link {
+    color: #9ca3af;
+}
+
+.sidebar-link:hover {
+    background: rgba(102, 126, 234, 0.1);
+    color: #667eea;
+    transform: translateX(4px);
+}
+
+body.dark-theme .sidebar-link:hover {
+    background: rgba(102, 126, 234, 0.2);
+    color: #667eea;
+}
+
+.sidebar-link.active {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.sidebar-link.active:hover {
+    transform: translateX(0);
+}
+
+.sidebar-link i {
+    font-size: 1.25rem;
+    width: 24px;
+    text-align: center;
+}
+
+.sidebar-link-badge {
+    margin-left: auto;
+    background: #ef4444;
+    color: white;
+    font-size: 0.75rem;
+    padding: 0.125rem 0.5rem;
+    border-radius: 1rem;
+    font-weight: 600;
+}
+
+.sidebar-footer {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 1.5rem;
+    border-top: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+body.dark-theme .sidebar-footer {
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.sidebar-user {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem;
+    background: rgba(102, 126, 234, 0.1);
+    border-radius: 0.75rem;
+}
+
+body.dark-theme .sidebar-user {
+    background: rgba(102, 126, 234, 0.2);
+}
+
+.sidebar-user-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 700;
+}
+
+.sidebar-user-info {
+    flex: 1;
+}
+
+.sidebar-user-name {
+    font-weight: 600;
+    font-size: 0.875rem;
+    color: #1f2937;
+}
+
+body.dark-theme .sidebar-user-name {
+    color: #e0e0e0;
+}
+
+.sidebar-user-role {
+    font-size: 0.75rem;
+    color: #6b7280;
+}
+
+body.dark-theme .sidebar-user-role {
+    color: #9ca3af;
+}
+
+/* Контент с отступом для сайдбара */
+.main-content {
+    margin-left: 80px;
+    transition: margin-left 0.3s ease;
+}
+
+/* Кнопка сворачивания */
+.sidebar-toggle {
+    position: fixed;
+    left: 260px;
+    top: 1rem;
+    width: 40px;
+    height: 40px;
+    background: rgba(255, 255, 255, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 1001;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+body.dark-theme .sidebar-toggle {
+    background: rgba(30, 30, 46, 0.95);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+.sidebar-toggle:hover {
+    background: #667eea;
+    color: white;
+}
+
+.sidebar.collapsed {
+    width: 80px;
+}
+
+/* Скрываем текст когда сайдбар свернут */
+.sidebar .sidebar-logo span,
+.sidebar .sidebar-section-title,
+.sidebar .sidebar-link span,
+.sidebar .sidebar-user-info,
+.sidebar .sidebar-link-badge,
+.sidebar .sidebar-user button {
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.sidebar:hover .sidebar-logo span,
+.sidebar:hover .sidebar-section-title,
+.sidebar:hover .sidebar-link span,
+.sidebar:hover .sidebar-user-info,
+.sidebar:hover .sidebar-link-badge,
+.sidebar:hover .sidebar-user button,
+.sidebar.expanded .sidebar-logo span,
+.sidebar.expanded .sidebar-section-title,
+.sidebar.expanded .sidebar-link span,
+.sidebar.expanded .sidebar-user-info,
+.sidebar.expanded .sidebar-link-badge,
+.sidebar.expanded .sidebar-user button {
+    opacity: 1;
+}
+
+.sidebar .sidebar-link {
+    justify-content: center;
+    padding: 0.75rem;
+}
+
+.sidebar:hover .sidebar-link,
+.sidebar.expanded .sidebar-link {
+    justify-content: flex-start;
+    padding: 0.75rem 1rem;
+}
+
+.sidebar .sidebar-user {
+    justify-content: center;
+    padding: 0.5rem;
+}
+
+.sidebar:hover .sidebar-user,
+.sidebar.expanded .sidebar-user {
+    justify-content: flex-start;
+    padding: 0.75rem;
+}
+
+.sidebar .sidebar-user-avatar {
+    margin: 0;
+}
+
+.sidebar .sidebar-footer {
+    padding: 1rem;
+}
+
+.sidebar:hover .sidebar-footer,
+.sidebar.expanded .sidebar-footer {
+    padding: 1.5rem;
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+    .sidebar {
+        transform: translateX(-100%);
+    }
+    
+    .sidebar.mobile-open {
+        transform: translateX(0);
+    }
+    
+    .main-content {
+        margin-left: 0;
+    }
+    
+    .sidebar-toggle {
+        left: 1rem;
+    }
+}

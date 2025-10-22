@@ -7,6 +7,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="sidebar.css">
 </head>
 <body>
     <!-- Заголовок -->
@@ -20,24 +21,9 @@
                 <p class="text-gray-600">Управление сотрудниками SolarBox.</p>
             </div>
             <div class="flex flex-wrap gap-2">
-                <button onclick="toggleTheme()" class="btn btn-secondary" id="themeToggle" title="Переключить тему">
-                    <i class="fas fa-moon" id="themeIcon"></i>
-                </button>
-                <a href="applications.html" class="btn btn-secondary">
-                    <i class="fas fa-clipboard-list mr-2"></i>
-                    Заявки
-                </a>
-                <a href="admin-passwords.html" class="btn btn-warning" id="adminPasswordsBtn" style="display: none;">
-                    <i class="fas fa-key mr-2"></i>
-                    Пароли
-                </a>
-                <a href="logs.html" class="btn btn-warning" id="logsBtn" style="display: none;">
-                    <i class="fas fa-file-alt mr-2"></i>
-                    Логи
-                </a>
                 <button onclick="openAddModal()" class="btn btn-primary">
                     <i class="fas fa-plus mr-2"></i>
-                    Добавить
+                    Добавить сотрудника
                 </button>
             </div>
         </div>
@@ -468,10 +454,48 @@
         </div>
     </div>
 
+    <!-- Модальное окно управления соляриками -->
+    <div id="solarikiModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="text-2xl font-bold">Управление соляриками</h3>
+                <button onclick="closeSolarikiModal()" class="text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-times text-2xl"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p class="text-gray-700 mb-4">Сотрудник: <strong id="solarikiDiscord"></strong></p>
+                
+                <div class="mb-4">
+                    <label class="block text-gray-700 font-semibold mb-2">
+                        <i class="fas fa-coins text-yellow-500 mr-2"></i>
+                        Количество соляриков
+                    </label>
+                    <input type="number" id="solarikiAmount" min="1" value="10" class="input-field">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button onclick="closeSolarikiModal()" class="btn btn-secondary">
+                    Отмена
+                </button>
+                <button onclick="submitAddSolariki()" class="btn btn-success">
+                    <i class="fas fa-plus mr-2"></i>
+                    Выдать
+                </button>
+                <button onclick="submitRemoveSolariki()" class="btn btn-danger">
+                    <i class="fas fa-minus mr-2"></i>
+                    Снять
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Контейнер для toast уведомлений -->
     <div id="toastContainer" class="toast-container"></div>
 
+    <script src="snow.js"></script>
     <script src="theme.js"></script>
+    <script src="sidebar.js"></script>
     <script src="app.js"></script>
 </body>
 </html>

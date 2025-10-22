@@ -59,7 +59,7 @@ function getRoleBadge(position) {
 // Обновление информации о пользователе
 function updateUserInfo() {
     const userInfoHTML = `
-        <div class="bg-white rounded-lg shadow p-4 mb-6">
+        <div class="user-info-card bg-white rounded-lg shadow p-4 mb-6">
             <div class="flex items-center justify-between">
                 <div>
                     <p class="text-sm text-gray-600 mb-2">Вы вошли как:</p>
@@ -249,6 +249,10 @@ function renderStaff(staff) {
                     
                     <div class="space-y-2 text-sm text-gray-600 mb-3">
                         <div class="flex items-center">
+                            <i class="fas fa-coins w-5 text-yellow-500"></i>
+                            <span>Солярики: <strong class="text-yellow-600">☀️ ${member.solariki || 0}</strong></span>
+                        </div>
+                        <div class="flex items-center">
                             <i class="fas fa-exclamation-triangle w-5 ${member.warns > 0 ? 'text-red-600' : 'text-gray-400'}"></i>
                             <span>Варны: <strong class="${member.warns >= 2 ? 'text-red-600' : ''}">${member.warns}/3</strong></span>
                         </div>
@@ -271,6 +275,9 @@ function renderStaff(staff) {
                                 <i class="fas fa-trash mr-1"></i> Удалить навсегда
                             </button>
                         ` : `
+                            <button onclick="manageSolariki('${member.discord}')" class="btn btn-warning btn-sm">
+                                <i class="fas fa-coins mr-1"></i> Солярики
+                            </button>
                             <button onclick="changePosition('${member.discord}')" class="btn btn-primary btn-sm">
                                 <i class="fas fa-arrow-up mr-1"></i> Должность
                             </button>
@@ -690,6 +697,87 @@ async function submitDelete() {
 
 // Модальное окно увольнения
 let currentFireDiscord = '';
+
+// Управление соляриками
+let currentSolarikiDiscord = '';
+
+function manageSolariki(discord) {
+    currentSolarikiDiscord = discord;
+    document.getElementById('solarikiDiscord').textContent = discord;
+    document.getElementById('solarikiAmount').value = '10';
+    document.getElementById('solarikiModal').classList.add('active');
+}
+
+function closeSolarikiModal() {
+    document.getElementById('solarikiModal').classList.remove('active');
+    currentSolarikiDiscord = '';
+}
+
+async function submitAddSolariki() {
+    const amount = parseInt(document.getElementById('solarikiAmount').value);
+    
+    if (!amount || amount < 1) {
+        showToast('Укажите корректное количество соляриков!', 'error');
+        return;
+    }
+    
+    try {
+        const response = await fetch(`${API_URL}/staff/${encodeURIComponent(currentSolarikiDiscord)}/solariki/add`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                amount: amount,
+                moderator: currentUser.discord,
+                moderatorPosition: currentUser.position
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            showToast(`Выдано ${amount} соляриков!`, 'success');
+            closeSolarikiModal();
+            loadStaff();
+        } else {
+            showToast(data.error || 'Ошибка выдачи соляриков', 'error');
+        }
+    } catch (error) {
+        showToast('Ошибка подключения к серверу', 'error');
+    }
+}
+
+async function submitRemoveSolariki() {
+    const amount = parseInt(document.getElementById('solarikiAmount').value);
+    
+    if (!amount || amount < 1) {
+        showToast('Укажите корректное количество соляриков!', 'error');
+        return;
+    }
+    
+    try {
+        const response = await fetch(`${API_URL}/staff/${encodeURIComponent(currentSolarikiDiscord)}/solariki/remove`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                amount: amount,
+                moderator: currentUser.discord,
+                moderatorPosition: currentUser.position
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            showToast(`Снято ${amount} соляриков!`, 'success');
+            closeSolarikiModal();
+            loadStaff();
+        } else {
+            showToast(data.error || 'Ошибка снятия соляриков', 'error');
+        }
+    } catch (error) {
+        showToast('Ошибка подключения к серверу', 'error');
+    }
+}
 
 function fireStaff(discord) {
     currentFireDiscord = discord;

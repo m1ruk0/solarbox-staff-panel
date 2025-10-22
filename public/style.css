@@ -7,6 +7,33 @@
     box-sizing: border-box;
 }
 
+/* Цветной скроллбар */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+}
+
+/* Скроллбар для темной темы */
+body.dark-theme ::-webkit-scrollbar-thumb {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+body.dark-theme ::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+}
+
 body {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     min-height: 100vh;
@@ -127,6 +154,135 @@ body.dark-theme .user-info strong {
 
 body.dark-theme label {
     color: #b0b0b0 !important;
+}
+
+body.dark-theme table {
+    color: #e0e0e0;
+}
+
+body.dark-theme table thead {
+    background: rgba(50, 50, 66, 0.8);
+}
+
+body.dark-theme table tbody tr {
+    background: rgba(40, 40, 56, 0.6);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+body.dark-theme table tbody tr:hover {
+    background: rgba(50, 50, 66, 0.8);
+}
+
+body.dark-theme .btn {
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+body.dark-theme .btn-secondary {
+    background: rgba(50, 50, 66, 0.8);
+    color: #e0e0e0;
+}
+
+body.dark-theme .btn-secondary:hover {
+    background: rgba(60, 60, 76, 0.9);
+}
+
+body.dark-theme .application-card,
+body.dark-theme .archive-card {
+    background: rgba(40, 40, 56, 0.95) !important;
+    border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+body.dark-theme .application-card:hover,
+body.dark-theme .archive-card:hover {
+    background: rgba(50, 50, 66, 0.95) !important;
+}
+
+body.dark-theme textarea,
+body.dark-theme select {
+    background: rgba(40, 40, 56, 0.8);
+    border-color: rgba(255, 255, 255, 0.2);
+    color: #e0e0e0;
+}
+
+body.dark-theme .loading {
+    color: #e0e0e0;
+}
+
+body.dark-theme .text-sm,
+body.dark-theme .text-xs {
+    color: #b0b0b0 !important;
+}
+
+body.dark-theme p {
+    color: #b0b0b0;
+}
+
+body.dark-theme strong {
+    color: #e0e0e0;
+}
+
+/* Информационный блок "Вы вошли как" */
+body.dark-theme .user-card,
+body.dark-theme .info-card,
+body.dark-theme .user-info-card {
+    background: rgba(40, 40, 56, 0.95) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+body.dark-theme .user-info-card p,
+body.dark-theme .user-info-card .text-gray-600 {
+    color: #b0b0b0 !important;
+}
+
+body.dark-theme .user-info-card .text-gray-800 {
+    color: #e0e0e0 !important;
+}
+
+/* Карточки персонала - основные */
+body.dark-theme .staff-card,
+body.dark-theme .staff-grid .staff-card {
+    background: rgba(40, 40, 56, 0.95) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    color: #e0e0e0 !important;
+}
+
+body.dark-theme .staff-card:hover,
+body.dark-theme .staff-grid .staff-card:hover {
+    background: rgba(50, 50, 66, 0.95) !important;
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5) !important;
+}
+
+body.dark-theme .staff-card h3,
+body.dark-theme .staff-card .text-gray-900 {
+    color: #e0e0e0 !important;
+}
+
+body.dark-theme .staff-card .text-gray-500,
+body.dark-theme .staff-card .text-gray-600 {
+    color: #b0b0b0 !important;
+}
+
+/* Все белые карточки */
+body.dark-theme [style*="background: rgba(255, 255, 255"],
+body.dark-theme [style*="background:rgba(255,255,255"] {
+    background: rgba(40, 40, 56, 0.95) !important;
+}
+
+/* Иконки в статистике */
+body.dark-theme .stat-icon {
+    opacity: 0.9;
+}
+
+/* Бейджи статуса */
+body.dark-theme .status-badge {
+    filter: brightness(1.1);
+}
+
+/* Кнопки действий */
+body.dark-theme .btn-success,
+body.dark-theme .btn-warning,
+body.dark-theme .btn-danger {
+    filter: brightness(1.1);
 }
 
 .glass-card {
