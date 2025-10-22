@@ -390,6 +390,65 @@ app.post('/api/staff/:discord/solariki/remove', async (req, res) => {
   }
 });
 
+// Передать солярики другому пользователю
+app.post('/api/staff/solariki/transfer', async (req, res) => {
+  try {
+    const { from, to, amount } = req.body;
+    
+    if (!from || !to || !amount) {
+      return res.status(400).json({ success: false, error: 'Не указаны все параметры' });
+    }
+    
+    if (from.toLowerCase() === to.toLowerCase()) {
+      return res.status(400).json({ success: false, error: 'Нельзя передать самому себе' });
+    }
+    
+    // Проверяем существование отправителя
+    const sender = await staffDB.getStaffByDiscord(from);
+    if (!sender) {
+      return res.status(404).json({ success: false, error: 'Отправитель не найден' });
+    }
+    
+    // Проверяем баланс
+    if ((sender.solariki || 0) < amount) {
+      return res.status(400).json({ success: false, error: 'Недостаточно соляриков' });
+    }
+    
+    // Проверяем существование получателя
+    const recipient = await staffDB.getStaffByDiscord(to);
+    if (!recipient) {
+      return res.status(404).json({ success: false, error: 'Получатель не найден' });
+    }
+    
+    // Снимаем у отправителя
+    const removed = await staffDB.removeSolariki(from, amount);
+    if (!removed) {
+      return res.status(500).json({ success: false, error: 'Ошибка снятия соляриков' });
+    }
+    
+    // Добавляем получателю
+    const added = await staffDB.addSolariki(to, amount);
+    if (!added) {
+      // Возвращаем обратно если не удалось добавить
+      await staffDB.addSolariki(from, amount);
+      return res.status(500).json({ success: false, error: 'Ошибка добавления соляриков' });
+    }
+    
+    // Логируем
+    await logsDB.addLog(
+      'Передача соляриков',
+      from,
+      to,
+      `Количество: ${amount}`
+    );
+    
+    res.json({ success: true, message: 'Солярики переданы' });
+  } catch (error) {
+    console.error('Ошибка передачи соляриков:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // Удалить навсегда
 app.delete('/api/staff/:discord/permanent-delete', async (req, res) => {
   try {

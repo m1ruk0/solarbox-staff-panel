@@ -61,51 +61,26 @@ async function transferSolariki(event) {
     }
     
     try {
-        // Проверяем существование получателя
-        const checkResponse = await fetch(`${API_URL}/staff/${recipient}`);
-        const checkData = await checkResponse.json();
-        
-        if (!checkData.success) {
-            showToast('Получатель не найден!', 'error');
-            return;
-        }
-        
-        // Снимаем у отправителя
-        const removeResponse = await fetch(`${API_URL}/staff/${currentUser.discord}/solariki/remove`, {
+        // Передаем солярики через новый endpoint
+        const response = await fetch(`${API_URL}/staff/solariki/transfer`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ amount, moderator: currentUser.discord })
+            body: JSON.stringify({
+                from: currentUser.discord,
+                to: recipient,
+                amount: amount
+            })
         });
         
-        const removeData = await removeResponse.json();
+        const data = await response.json();
         
-        if (!removeData.success) {
-            showToast('Ошибка снятия соляриков', 'error');
-            return;
-        }
-        
-        // Добавляем получателю
-        const addResponse = await fetch(`${API_URL}/staff/${recipient}/solariki/add`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ amount, moderator: currentUser.discord })
-        });
-        
-        const addData = await addResponse.json();
-        
-        if (addData.success) {
+        if (data.success) {
             showToast(`✅ Передано ${amount} соляриков пользователю ${recipient}!`, 'success');
             resetForm();
             loadBalance();
             loadHistory();
         } else {
-            // Возвращаем обратно если не удалось добавить
-            await fetch(`${API_URL}/staff/${currentUser.discord}/solariki/add`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ amount, moderator: 'system' })
-            });
-            showToast('Ошибка передачи соляриков', 'error');
+            showToast(data.error || 'Ошибка передачи соляриков', 'error');
         }
     } catch (error) {
         showToast('Ошибка подключения к серверу', 'error');

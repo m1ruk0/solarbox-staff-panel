@@ -82,20 +82,16 @@ body.dark-theme .sidebar-section-title {
     min-width: 20px;
     text-align: center;
     flex-shrink: 0;
-    transition: transform 0.3s ease;
 }
 
 .sidebar .sidebar-link {
-    padding-left: 25px;
-    transition: padding-left 0.3s ease;
+    justify-content: center;
+    padding: 0.65rem;
 }
 
 .sidebar:hover .sidebar-link {
-    padding-left: 0.75rem;
-}
-
-.sidebar:hover .sidebar-link i {
-    transform: translateX(0);
+    justify-content: flex-start;
+    padding: 0.65rem 0.75rem;
 }
 
 body.dark-theme .sidebar-link {
@@ -127,17 +123,15 @@ body.dark-theme .sidebar-link:hover {
 }
 
 .sidebar .sidebar-link.active {
-    padding: 0.65rem 0.5rem;
+    justify-content: center;
+    padding: 0.65rem;
     margin: 0.2rem 0.25rem;
 }
 
 .sidebar:hover .sidebar-link.active {
+    justify-content: flex-start;
     padding: 0.65rem 0.75rem;
     margin: 0 0 0.2rem 0;
-}
-
-.sidebar-link.active i {
-    transform: none !important;
 }
 
 .sidebar-link.active:hover {

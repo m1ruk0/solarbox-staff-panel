@@ -106,7 +106,8 @@ function initSnow() {
         // Проверяем настройку снегопада
         const snowEnabled = localStorage.getItem('snowEnabled');
         
-        if (snowEnabled === null || snowEnabled === 'true') {
+        // Снег включается только если явно установлено 'true'
+        if (snowEnabled === 'true') {
             if (!snowEffect) {
                 snowEffect = new SnowEffect();
                 console.log('❄️ Снегопад активирован');
