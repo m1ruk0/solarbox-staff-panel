@@ -20,11 +20,14 @@ if (currentUser.position !== 'OWNER') {
     window.location.href = 'index.html';
 }
 
-// Отображение информации о пользователе
-document.getElementById('userInfo').textContent = `${currentUser.discord} (${currentUser.position})`;
-
 // Загрузка логов
 document.addEventListener('DOMContentLoaded', () => {
+    // Отображение информации о пользователе
+    const userInfoEl = document.getElementById('userInfo');
+    if (userInfoEl) {
+        userInfoEl.textContent = `${currentUser.discord} (${currentUser.position})`;
+    }
+    
     loadLogs();
     
     // Поиск в реальном времени
@@ -42,6 +45,11 @@ async function loadLogs() {
             allLogs = data.data;
             renderLogs(allLogs);
             document.getElementById('loading').style.display = 'none';
+        } else {
+            document.getElementById('loading').innerHTML = `
+                <i class="fas fa-exclamation-circle text-6xl text-red-500 mb-4"></i>
+                <p class="text-white text-xl">Ошибка загрузки логов</p>
+            `;
         }
     } catch (error) {
         console.error('Ошибка загрузки логов:', error);

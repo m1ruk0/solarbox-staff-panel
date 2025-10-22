@@ -14,18 +14,18 @@
     <link rel="stylesheet" href="sidebar.css">
 </head>
 <body class="dark-theme">
-    <!-- Сайдбар -->
-    <div id="sidebarContainer"></div>
-
     <!-- Основной контент -->
     <div class="main-content">
         <!-- Заголовок -->
         <div class="header-card">
-            <h1 class="text-4xl font-bold text-gray-800 mb-2">
-                <i class="fas fa-archive text-purple-600 mr-3"></i>
-                Архив заявок
-            </h1>
-            <p class="text-gray-600">Принятые и отклоненные заявки</p>
+            <div>
+                <h1 class="text-4xl font-bold text-gray-800 mb-2">
+                    <i class="fas fa-archive text-purple-600 mr-3"></i>
+                    Архив заявок
+                </h1>
+                <p class="text-gray-600">Принятые и отклоненные заявки</p>
+            </div>
+            <p class="text-sm text-gray-500 mt-2" id="userInfo"></p>
         </div>
 
         <!-- Статистика -->
@@ -88,7 +88,6 @@
     <!-- Контейнер для toast уведомлений -->
     <div id="toastContainer" class="toast-container"></div>
 
-    <script src="snow.js"></script>
     <script src="theme.js"></script>
     <script src="sidebar.js"></script>
     <script src="applications-archive.js"></script>

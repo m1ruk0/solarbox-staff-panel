@@ -67,18 +67,27 @@ function createSidebar() {
                 </div>
                 
                 <div class="sidebar-section">
-                    <div class="sidebar-section-title">Архивы</div>
-                    <a href="applications-archive.html" class="sidebar-link ${currentPage === 'applications-archive.html' ? 'active' : ''}">
-                        <i class="fas fa-archive"></i>
-                        <span>Архив заявок</span>
-                    </a>
-                </div>
-                
-                <div class="sidebar-section">
                     <div class="sidebar-section-title">Финансы</div>
                     <a href="balance.html" class="sidebar-link ${currentPage === 'balance.html' ? 'active' : ''}">
                         <i class="fas fa-coins"></i>
                         <span>Баланс</span>
+                    </a>
+                </div>
+                
+                <div class="sidebar-section">
+                    <div class="sidebar-section-title">Отчеты</div>
+                    <a href="reports-submit.html" class="sidebar-link ${currentPage === 'reports-submit.html' ? 'active' : ''}">
+                        <i class="fas fa-file-alt"></i>
+                        <span>Отправить отчет</span>
+                    </a>
+                    <a href="reports-my.html" class="sidebar-link ${currentPage === 'reports-my.html' ? 'active' : ''}">
+                        <i class="fas fa-clipboard-list"></i>
+                        <span>Мои отчеты</span>
+                    </a>
+                    <a href="reports-manage.html" class="sidebar-link ${currentPage === 'reports-manage.html' ? 'active' : ''}" id="reportsManageLink" style="display: none;">
+                        <i class="fas fa-tasks"></i>
+                        <span>Управление отчетами</span>
+                        <span class="sidebar-link-badge" id="pendingReportsBadge" style="display: none;">0</span>
                     </a>
                 </div>
                 
@@ -91,6 +100,10 @@ function createSidebar() {
                     <a href="logs.html" class="sidebar-link ${currentPage === 'logs.html' ? 'active' : ''}">
                         <i class="fas fa-file-alt"></i>
                         <span>Логи</span>
+                    </a>
+                    <a href="applications-archive.html" class="sidebar-link ${currentPage === 'applications-archive.html' ? 'active' : ''}">
+                        <i class="fas fa-archive"></i>
+                        <span>Архив заявок</span>
                     </a>
                 </div>
                 
@@ -106,13 +119,6 @@ function createSidebar() {
                     </a>
                 </div>
                 
-                <div class="sidebar-section">
-                    <div class="sidebar-section-title">Настройки</div>
-                    <a href="#" onclick="toggleSnow(); return false;" class="sidebar-link">
-                        <i class="fas fa-snowflake"></i>
-                        <span>Снегопад</span>
-                    </a>
-                </div>
             </nav>
         </div>
         
@@ -135,6 +141,9 @@ function createSidebar() {
     
     // Загружаем количество заявок
     loadPendingCount();
+    
+    // Загружаем количество отчетов на рассмотрении
+    loadPendingReportsCount();
 }
 
 // Переключение сайдбара
@@ -161,6 +170,14 @@ function checkAdminRights() {
         const bugsAdminLink = document.getElementById('bugsAdminLink');
         if (bugsAdminLink) {
             bugsAdminLink.style.display = 'flex';
+        }
+    }
+    
+    // Показываем управление отчетами для ZAM.CURATOR и выше
+    if (moderatorPositions.includes(user.position)) {
+        const reportsManageLink = document.getElementById('reportsManageLink');
+        if (reportsManageLink) {
+            reportsManageLink.style.display = 'flex';
         }
     }
 }
@@ -202,6 +219,33 @@ async function loadPendingCount() {
         }
     } catch (error) {
         console.log('Не удалось загрузить количество заявок');
+    }
+}
+
+// Загрузка количества отчетов на рассмотрении
+async function loadPendingReportsCount() {
+    try {
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
+        if (!user.discord) return;
+        
+        const API_URL = window.location.protocol === 'file:' 
+            ? 'http://localhost:4000/api' 
+            : window.location.origin + '/api';
+            
+        const response = await fetch(`${API_URL}/reports?discord=${encodeURIComponent(user.discord)}`);
+        const data = await response.json();
+        
+        if (data.success) {
+            const pending = data.data.filter(r => r.status === 'pending').length;
+            
+            const badge = document.getElementById('pendingReportsBadge');
+            if (badge && pending > 0) {
+                badge.textContent = pending;
+                badge.style.display = 'block';
+            }
+        }
+    } catch (error) {
+        console.log('Не удалось загрузить количество отчетов');
     }
 }
 

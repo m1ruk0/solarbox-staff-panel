@@ -1,6 +1,13 @@
-const { app, BrowserWindow } = require('electron');
+const { app, BrowserWindow, dialog, ipcMain } = require('electron');
+const { autoUpdater } = require('electron-updater');
 const path = require('path');
 const fs = require('fs');
+
+// Настройка автообновлений
+autoUpdater.autoDownload = false; // Не скачиваем автоматически
+autoUpdater.autoInstallOnAppQuit = true; // Устанавливаем при выходе
+
+let updateWindow = null;
 
 // ВАЖНО: Загружаем .env ПЕРЕД запуском API сервера
 // В production (собранном приложении) ищем .env в разных местах
@@ -47,7 +54,14 @@ if (!envLoaded) {
 }
 
 // Запускаем API сервер
-require('./api-server-supabase.js');
+let serverReady = false;
+const apiServer = require('./api-server-supabase.js');
+
+// Ждем готовности сервера
+setTimeout(() => {
+  serverReady = true;
+  console.log('✅ API сервер готов');
+}, 3000);
 
 let mainWindow;
 
@@ -72,13 +86,44 @@ function createWindow() {
     title: 'SolarBox - Панель управления персоналом'
   });
 
-  // Ждем запуска сервера
+  // Показываем экран загрузки (как на сайте)
+  mainWindow.loadURL('data:text/html,' + encodeURIComponent(`
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="UTF-8">
+      <style>
+        body { margin: 0; background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); display: flex; justify-content: center; align-items: center; height: 100vh; font-family: 'Inter', Arial, sans-serif; }
+        .loader-content { text-align: center; }
+        .loader-spinner { width: 50px; height: 50px; margin: 0 auto 2rem; border-radius: 50%; border: 4px solid transparent; border-top-color: #764ba2; border-right-color: #764ba2; animation: spin 0.8s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .loader-text { color: white; font-size: 1.2rem; font-weight: 600; margin-bottom: 0.5rem; animation: pulse 1.5s ease-in-out infinite; }
+        .loader-subtext { color: rgba(255, 255, 255, 0.6); font-size: 0.9rem; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+      </style>
+    </head>
+    <body>
+      <div class="loader-content">
+        <div class="loader-spinner"></div>
+        <div class="loader-text">Загрузка...</div>
+        <div class="loader-subtext">Подготовка панели управления</div>
+      </div>
+    </body>
+    </html>
+  `));
+  
+  // Ждем запуска сервера и загружаем login.html
   setTimeout(() => {
-    mainWindow.loadURL('http://localhost:4000');
-  }, 2000);
+    mainWindow.loadURL('http://localhost:4000/login.html').catch(err => {
+      console.error('❌ Ошибка загрузки:', err);
+      mainWindow.loadURL('data:text/html,<h1 style="text-align:center;margin-top:50px;font-family:Arial;">Ошибка запуска сервера</h1><p style="text-align:center;font-family:Arial;">Проверьте .env файл и подключение к базе данных.</p>');
+    });
+  }, 3500);
 
-  // Открыть DevTools (для разработки, можно убрать)
-  // mainWindow.webContents.openDevTools();
+  // DevTools только в режиме разработки
+  if (!app.isPackaged) {
+    mainWindow.webContents.openDevTools();
+  }
 
   mainWindow.on('closed', function () {
     mainWindow = null;
@@ -90,8 +135,117 @@ function createWindow() {
   });
 }
 
+// Функция создания окна обновлений
+function createUpdateWindow(updateInfo) {
+  if (updateWindow) {
+    updateWindow.focus();
+    return;
+  }
+
+  updateWindow = new BrowserWindow({
+    width: 550,
+    height: 450,
+    resizable: false,
+    frame: false,
+    transparent: false,
+    webPreferences: {
+      nodeIntegration: true,
+      contextIsolation: false
+    },
+    parent: mainWindow,
+    modal: true
+  });
+
+  const updatePath = app.isPackaged
+    ? path.join(process.resourcesPath, 'app', 'public', 'update.html')
+    : path.join(__dirname, 'public', 'update.html');
+
+  if (fs.existsSync(updatePath)) {
+    updateWindow.loadFile(updatePath);
+  } else {
+    updateWindow.loadURL('http://localhost:4000/update.html');
+  }
+
+  updateWindow.on('closed', () => {
+    updateWindow = null;
+  });
+
+  // Отправляем информацию об обновлении
+  updateWindow.webContents.on('did-finish-load', () => {
+    updateWindow.webContents.send('update-info', updateInfo);
+  });
+}
+
+// Обработчики IPC от окна обновлений
+ipcMain.on('download-update', () => {
+  autoUpdater.downloadUpdate();
+});
+
+ipcMain.on('restart-app', () => {
+  autoUpdater.quitAndInstall();
+});
+
+ipcMain.on('close-update-window', () => {
+  if (updateWindow) {
+    updateWindow.close();
+  }
+});
+
+// Обработчики событий автообновления
+autoUpdater.on('checking-for-update', () => {
+  console.log('🔍 Проверка обновлений...');
+});
+
+autoUpdater.on('update-available', (info) => {
+  console.log('✅ Доступно обновление:', info.version);
+  createUpdateWindow(info);
+});
+
+autoUpdater.on('update-not-available', () => {
+  console.log('✅ Обновлений нет, у вас последняя версия');
+});
+
+autoUpdater.on('download-progress', (progressObj) => {
+  console.log('📥 Загрузка:', progressObj.percent.toFixed(2) + '%');
+  
+  if (mainWindow) {
+    mainWindow.setProgressBar(progressObj.percent / 100);
+  }
+  
+  if (updateWindow) {
+    updateWindow.webContents.send('download-progress', progressObj);
+  }
+});
+
+autoUpdater.on('update-downloaded', () => {
+  console.log('✅ Обновление загружено');
+  
+  if (mainWindow) {
+    mainWindow.setProgressBar(-1);
+  }
+  
+  if (updateWindow) {
+    updateWindow.webContents.send('update-downloaded');
+  }
+});
+
+autoUpdater.on('error', (error) => {
+  console.error('❌ Ошибка обновления:', error);
+  
+  if (updateWindow) {
+    updateWindow.webContents.send('update-error', error);
+  }
+});
+
 app.whenReady().then(() => {
   createWindow();
+  
+  // Проверяем обновления через 3 секунды после запуска
+  if (app.isPackaged) {
+    setTimeout(() => {
+      autoUpdater.checkForUpdates();
+    }, 3000);
+  }
 
   app.on('activate', function () {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();

@@ -59,9 +59,9 @@ async function loadSecurityQuestion() {
         
         if (data.success && data.question) {
             document.getElementById('questionContainer').innerHTML = `
-                <div class="bg-indigo-50 p-3 rounded-lg">
-                    <p class="text-sm text-gray-600 font-semibold">Секретный вопрос:</p>
-                    <p class="text-gray-800">${data.question}</p>
+                <div style="background: rgba(102, 126, 234, 0.1); padding: 0.75rem; border-radius: 0.5rem; border: 1px solid rgba(102, 126, 234, 0.2);">
+                    <p style="font-size: 0.875rem; color: #667eea; font-weight: 600; margin-bottom: 0.5rem;">Секретный вопрос:</p>
+                    <p style="color: #1f2937; font-weight: 500;">${data.question}</p>
                 </div>
             `;
         } else {

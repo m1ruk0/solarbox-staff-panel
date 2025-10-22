@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="ru" class="dark-theme">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Мои отчеты - SolarBox Staff Panel</title>
+    <style>
+        html, body {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%) !important;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            margin-left: 70px !important;
+        }
+        
+        #pageLoader {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 99999;
+            transition: opacity 0.3s ease;
+        }
+        
+        .loader-spinner {
+            width: 50px;
+            height: 50px;
+            margin: 0 auto 2rem;
+            border-radius: 50%;
+            border: 4px solid transparent;
+            border-top-color: #764ba2;
+            border-right-color: #764ba2;
+            animation: spin 0.8s linear infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .loader-text {
+            color: white;
+            font-size: 1.2rem;
+            font-weight: 600;
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .report-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            transition: all 0.3s;
+        }
+
+        .report-card:hover {
+            background: rgba(255, 255, 255, 0.08);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            font-size: 0.875rem;
+        }
+
+        .status-pending {
+            background: rgba(251, 191, 36, 0.2);
+            color: #fbbf24;
+        }
+
+        .status-approved {
+            background: rgba(34, 197, 94, 0.2);
+            color: #22c55e;
+        }
+
+        .status-rejected {
+            background: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+        }
+
+        .report-type-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.375rem 0.75rem;
+            border-radius: 0.375rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            background: rgba(102, 126, 234, 0.2);
+            color: #667eea;
+        }
+
+        .screenshot-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+
+        .screenshot-thumb {
+            width: 100%;
+            height: 120px;
+            object-fit: cover;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .screenshot-thumb:hover {
+            transform: scale(1.05);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: #9ca3af;
+        }
+
+        .empty-state i {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+    </style>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="sidebar.css">
+</head>
+<body class="dark-theme">
+    <!-- Loader -->
+    <div id="pageLoader">
+        <div class="loader-spinner"></div>
+        <div class="loader-text">Загрузка...</div>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="sidebar" id="sidebar"></div>
+
+    <!-- Toast Container -->
+    <div id="toastContainer" class="toast-container"></div>
+
+    <!-- Заголовок -->
+    <div class="header-card">
+        <div class="flex items-center justify-between flex-wrap gap-4">
+            <div>
+                <h1 class="text-4xl font-bold text-gray-800 mb-2">
+                    <i class="fas fa-clipboard-list text-indigo-600 mr-3"></i>
+                    Мои отчеты
+                </h1>
+                <p class="text-gray-600">Просмотр статуса ваших отчетов</p>
+            </div>
+            <a href="reports-submit.html" class="btn btn-primary">
+                <i class="fas fa-plus mr-2"></i>
+                Создать отчет
+            </a>
+        </div>
+    </div>
+
+    <!-- Поиск -->
+    <div class="glass-card mb-6">
+        <div class="flex gap-4">
+            <div class="flex-1">
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                    <i class="fab fa-discord mr-2"></i>Ваш Discord ник
+                </label>
+                <input type="text" id="authorInput"
+                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    placeholder="Введите ваш Discord ник">
+            </div>
+            <div class="flex items-end">
+                <button onclick="loadMyReports()" class="btn btn-primary">
+                    <i class="fas fa-search mr-2"></i>
+                    Найти мои отчеты
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Список отчетов -->
+    <div id="reportsContainer"></div>
+
+    <script src="app.js"></script>
+    <script>
+        const API_URL = window.location.protocol === 'file:' 
+            ? 'http://localhost:4000/api' 
+            : window.location.origin + '/api';
+
+        // Загрузка sidebar
+        document.addEventListener('DOMContentLoaded', async () => {
+            await loadSidebar();
+            hideLoader();
+        });
+
+        async function loadSidebar() {
+            try {
+                const response = await fetch('sidebar.html');
+                const html = await response.text();
+                document.getElementById('sidebar').innerHTML = html;
+                
+                const links = document.querySelectorAll('.sidebar-link');
+                links.forEach(link => {
+                    if (link.getAttribute('href') === 'reports-my.html') {
+                        link.classList.add('active');
+                    }
+                });
+            } catch (error) {
+                console.error('Ошибка загрузки sidebar:', error);
+            }
+        }
+
+        function hideLoader() {
+            const loader = document.getElementById('pageLoader');
+            if (loader) {
+                loader.style.opacity = '0';
+                setTimeout(() => loader.style.display = 'none', 300);
+            }
+        }
+
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            
+            const icon = type === 'success' ? 'fa-check-circle' : type === 'error' ? 'fa-times-circle' : 'fa-info-circle';
+            
+            toast.innerHTML = `
+                <i class="fas ${icon} toast-icon"></i>
+                <div class="toast-message">${message}</div>
+                <button class="toast-close" onclick="this.parentElement.remove()">
+                    <i class="fas fa-times"></i>
+                </button>
+            `;
+            
+            container.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.classList.add('removing');
+                setTimeout(() => toast.remove(), 300);
+            }, 4000);
+        }
+
+        function getReportTypeIcon(type) {
+            const icons = {
+                'ban': '🔨',
+                'mute': '🔇',
+                'warn': '⚠️',
+                'kick': '👢',
+                'other': '📋'
+            };
+            return icons[type] || '📋';
+        }
+
+        function getReportTypeName(type) {
+            const names = {
+                'ban': 'Бан',
+                'mute': 'Мут',
+                'warn': 'Варн',
+                'kick': 'Кик',
+                'other': 'Другое'
+            };
+            return names[type] || type;
+        }
+
+        function getStatusBadge(status) {
+            const statuses = {
+                'pending': { text: 'На рассмотрении', icon: 'fa-clock', class: 'status-pending' },
+                'approved': { text: 'Одобрен', icon: 'fa-check-circle', class: 'status-approved' },
+                'rejected': { text: 'Отклонен', icon: 'fa-times-circle', class: 'status-rejected' }
+            };
+            
+            const s = statuses[status] || statuses['pending'];
+            return `<span class="status-badge ${s.class}"><i class="fas ${s.icon}"></i>${s.text}</span>`;
+        }
+
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleString('ru-RU', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+
+        async function loadMyReports() {
+            const author = document.getElementById('authorInput').value.trim();
+            
+            if (!author) {
+                showToast('Введите ваш Discord ник', 'error');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_URL}/reports/my?author=${encodeURIComponent(author)}`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    displayReports(data.data);
+                } else {
+                    showToast(data.error || 'Ошибка загрузки отчетов', 'error');
+                }
+            } catch (error) {
+                console.error('Ошибка:', error);
+                showToast('Ошибка соединения с сервером', 'error');
+            }
+        }
+
+        function displayReports(reports) {
+            const container = document.getElementById('reportsContainer');
+            
+            if (reports.length === 0) {
+                container.innerHTML = `
+                    <div class="glass-card">
+                        <div class="empty-state">
+                            <i class="fas fa-inbox"></i>
+                            <h3 class="text-xl font-bold mb-2">Отчетов не найдено</h3>
+                            <p>У вас пока нет отправленных отчетов</p>
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = reports.map(report => `
+                <div class="report-card">
+                    <div class="flex items-start justify-between mb-4">
+                        <div class="flex items-center gap-3">
+                            <span class="report-type-badge">
+                                ${getReportTypeIcon(report.report_type)} ${getReportTypeName(report.report_type)}
+                            </span>
+                            ${getStatusBadge(report.status)}
+                        </div>
+                        <span class="text-sm text-gray-500">
+                            <i class="far fa-calendar mr-1"></i>${formatDate(report.created_at)}
+                        </span>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <h3 class="text-xl font-bold text-white mb-2">
+                            <i class="fas fa-user mr-2"></i>${report.player_nickname}
+                        </h3>
+                        <p class="text-gray-400">
+                            <i class="fas fa-exclamation-circle mr-2"></i>
+                            <strong>Причина:</strong> ${report.reason}
+                        </p>
+                        ${report.description ? `
+                            <p class="text-gray-400 mt-2">
+                                <i class="fas fa-align-left mr-2"></i>
+                                <strong>Описание:</strong> ${report.description}
+                            </p>
+                        ` : ''}
+                    </div>
+                    
+                    ${report.screenshots && report.screenshots.length > 0 ? `
+                        <div class="mb-4">
+                            <p class="text-sm font-medium text-gray-400 mb-2">
+                                <i class="fas fa-images mr-2"></i>Скриншоты:
+                            </p>
+                            <div class="screenshot-grid">
+                                ${report.screenshots.map(url => `
+                                    <img src="${url}" class="screenshot-thumb" 
+                                        onclick="window.open('${url}', '_blank')"
+                                        onerror="this.src='https://via.placeholder.com/120?text=Ошибка'">
+                                `).join('')}
+                            </div>
+                        </div>
+                    ` : ''}
+                    
+                    ${report.reviewer ? `
+                        <div class="mt-4 pt-4 border-t border-gray-700">
+                            <p class="text-sm text-gray-400">
+                                <i class="fas fa-user-check mr-2"></i>
+                                <strong>Проверил:</strong> ${report.reviewer} (${report.reviewer_position})
+                            </p>
+                            ${report.review_comment ? `
+                                <p class="text-sm text-gray-400 mt-2">
+                                    <i class="fas fa-comment mr-2"></i>
+                                    <strong>Комментарий:</strong> ${report.review_comment}
+                                </p>
+                            ` : ''}
+                            <p class="text-xs text-gray-500 mt-2">
+                                <i class="far fa-clock mr-1"></i>${formatDate(report.reviewed_at)}
+                            </p>
+                        </div>
+                    ` : ''}
+                    
+                    <div class="mt-4 text-xs text-gray-500">
+                        <i class="fas fa-hashtag mr-1"></i>ID: ${report.id}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Enter для поиска
+        document.getElementById('authorInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                loadMyReports();
+            }
+        });
+    </script>
+</body>
+</html>

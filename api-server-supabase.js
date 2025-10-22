@@ -7,6 +7,7 @@ const applicationsDB = require('./applications-database-supabase'); // Supabase 
 const passwordsDB = require('./passwords-database-supabase');
 const logsDB = require('./logs-database-supabase');
 const bugsDB = require('./bugs-database-supabase');
+const reportsDB = require('./reports-database');
 const { hasPermission, canPromoteTo, getAvailablePositions, canManageStaffMember } = require('./roles');
 
 // Discord бот (опционально)

@@ -15,13 +15,13 @@ if (!userStr) {
 
 const currentUser = JSON.parse(userStr);
 
-// Отображение информации о пользователе
-document.getElementById('userInfo').textContent = `${currentUser.discord} (${currentUser.position})`;
-
-// Показать логи только для OWNER
-if (currentUser.position === 'OWNER') {
-    document.getElementById('logsLink').classList.remove('hidden');
-}
+// Отображение информации о пользователе после загрузки DOM
+document.addEventListener('DOMContentLoaded', () => {
+    const userInfoEl = document.getElementById('userInfo');
+    if (userInfoEl) {
+        userInfoEl.textContent = `${currentUser.discord} (${currentUser.position})`;
+    }
+});
 
 // Toast уведомления
 function showToast(message, type = 'success') {
@@ -57,6 +57,8 @@ async function loadArchive() {
             renderArchive(allArchive);
             updateStats();
             document.getElementById('loading').style.display = 'none';
+        } else {
+            showToast('Ошибка загрузки архива', 'error');
         }
     } catch (error) {
         console.error('Ошибка загрузки:', error);

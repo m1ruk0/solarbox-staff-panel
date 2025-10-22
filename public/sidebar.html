@@ -1,0 +1,126 @@
+<nav class="sidebar-nav">
+    <div class="sidebar-section">
+        <div class="sidebar-section-title">Главное</div>
+        <a href="index.html" class="sidebar-link">
+            <i class="fas fa-users"></i>
+            <span>Персонал</span>
+        </a>
+        <a href="applications.html" class="sidebar-link">
+            <i class="fas fa-clipboard-list"></i>
+            <span>Заявки</span>
+            <span class="sidebar-link-badge" id="pendingBadge" style="display: none;">0</span>
+        </a>
+    </div>
+    
+    <div class="sidebar-section">
+        <div class="sidebar-section-title">Финансы</div>
+        <a href="balance.html" class="sidebar-link">
+            <i class="fas fa-coins"></i>
+            <span>Баланс</span>
+        </a>
+    </div>
+    
+    <div class="sidebar-section">
+        <div class="sidebar-section-title">Отчеты</div>
+        <a href="reports-submit.html" class="sidebar-link">
+            <i class="fas fa-file-alt"></i>
+            <span>Отправить отчет</span>
+        </a>
+        <a href="reports-my.html" class="sidebar-link">
+            <i class="fas fa-clipboard-list"></i>
+            <span>Мои отчеты</span>
+        </a>
+        <a href="reports-manage.html" class="sidebar-link" id="reportsManageLink" style="display: none;">
+            <i class="fas fa-tasks"></i>
+            <span>Управление отчетами</span>
+            <span class="sidebar-link-badge" id="pendingReportsBadge" style="display: none;">0</span>
+        </a>
+    </div>
+    
+    <div class="sidebar-section" id="adminSection" style="display: none;">
+        <div class="sidebar-section-title">Администрирование</div>
+        <a href="admin-passwords.html" class="sidebar-link">
+            <i class="fas fa-key"></i>
+            <span>Пароли</span>
+        </a>
+        <a href="logs.html" class="sidebar-link">
+            <i class="fas fa-file-alt"></i>
+            <span>Логи</span>
+        </a>
+        <a href="applications-archive.html" class="sidebar-link">
+            <i class="fas fa-archive"></i>
+            <span>Архив заявок</span>
+        </a>
+    </div>
+    
+    <div class="sidebar-section">
+        <div class="sidebar-section-title">Другое</div>
+        <a href="bugs.html" class="sidebar-link">
+            <i class="fas fa-bug"></i>
+            <span>Сообщить о баге</span>
+        </a>
+        <a href="bugs-admin.html" class="sidebar-link" id="bugsAdminLink" style="display: none;">
+            <i class="fas fa-list"></i>
+            <span>История багов</span>
+        </a>
+    </div>
+</nav>
+
+<script>
+    // Проверка прав для показа админ секции и управления отчетами
+    (function() {
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
+        const adminPositions = ['OWNER', 'RAZRAB', 'TEX.ADMIN', 'ADMIN'];
+        const moderatorPositions = ['OWNER', 'RAZRAB', 'TEX.ADMIN', 'ADMIN', 'CURATOR', 'ZAM.CURATOR'];
+        
+        if (adminPositions.includes(user.position)) {
+            const adminSection = document.getElementById('adminSection');
+            if (adminSection) {
+                adminSection.style.display = 'block';
+            }
+        }
+        
+        if (moderatorPositions.includes(user.position)) {
+            const bugsAdminLink = document.getElementById('bugsAdminLink');
+            if (bugsAdminLink) {
+                bugsAdminLink.style.display = 'flex';
+            }
+            
+            const reportsManageLink = document.getElementById('reportsManageLink');
+            if (reportsManageLink) {
+                reportsManageLink.style.display = 'flex';
+            }
+        }
+        
+        // Загрузка количества отчетов на рассмотрении
+        if (moderatorPositions.includes(user.position)) {
+            loadPendingReportsCount();
+        }
+    })();
+    
+    async function loadPendingReportsCount() {
+        try {
+            const user = JSON.parse(localStorage.getItem('user') || '{}');
+            if (!user.discord) return;
+            
+            const API_URL = window.location.protocol === 'file:' 
+                ? 'http://localhost:4000/api' 
+                : window.location.origin + '/api';
+                
+            const response = await fetch(`${API_URL}/reports?discord=${encodeURIComponent(user.discord)}`);
+            const data = await response.json();
+            
+            if (data.success) {
+                const pending = data.data.filter(r => r.status === 'pending').length;
+                
+                const badge = document.getElementById('pendingReportsBadge');
+                if (badge && pending > 0) {
+                    badge.textContent = pending;
+                    badge.style.display = 'block';
+                }
+            }
+        } catch (error) {
+            console.log('Не удалось загрузить количество отчетов');
+        }
+    }
+</script>
