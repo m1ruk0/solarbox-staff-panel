@@ -12,6 +12,14 @@ html.dark-theme {
 /* Предотвращение смещения при загрузке */
 body {
     margin-left: 70px;
+    opacity: 0;
+    animation: fadeIn 0.3s ease-in forwards;
+}
+
+@keyframes fadeIn {
+    to {
+        opacity: 1;
+    }
 }
 
 * {
@@ -19,6 +27,7 @@ body {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
+    transition: all 0.2s ease;
 }
 
 /* Цветной скроллбар */

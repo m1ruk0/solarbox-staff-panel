@@ -85,6 +85,23 @@ app.get('/api/staff', async (req, res) => {
   }
 });
 
+// Получить одного сотрудника по Discord
+app.get('/api/staff/:discord', async (req, res) => {
+  try {
+    const { discord } = req.params;
+    const staff = await staffDB.getStaffByDiscord(discord);
+    
+    if (staff) {
+      res.json({ success: true, staff });
+    } else {
+      res.status(404).json({ success: false, error: 'Сотрудник не найден' });
+    }
+  } catch (error) {
+    console.error('Ошибка получения сотрудника:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // Добавить сотрудника
 app.post('/api/staff', async (req, res) => {
   try {
