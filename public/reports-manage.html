@@ -349,6 +349,7 @@
     <!-- Список отчетов -->
     <div id="reportsContainer"></div>
 
+    <script src="sidebar.js"></script>
     <script src="app.js"></script>
     <script>
         const API_URL = window.location.protocol === 'file:' 
@@ -360,9 +361,8 @@
         let currentFilter = 'all';
         let currentReportId = null;
 
-        // Загрузка sidebar
+        // Загрузка страницы
         document.addEventListener('DOMContentLoaded', async () => {
-            await loadSidebar();
             checkAuth();
             await loadReports();
             hideLoader();
@@ -375,23 +375,6 @@
                 return;
             }
             currentUser = JSON.parse(userStr);
-        }
-
-        async function loadSidebar() {
-            try {
-                const response = await fetch('sidebar.html');
-                const html = await response.text();
-                document.getElementById('sidebar').innerHTML = html;
-                
-                const links = document.querySelectorAll('.sidebar-link');
-                links.forEach(link => {
-                    if (link.getAttribute('href') === 'reports-manage.html') {
-                        link.classList.add('active');
-                    }
-                });
-            } catch (error) {
-                console.error('Ошибка загрузки sidebar:', error);
-            }
         }
 
         function hideLoader() {

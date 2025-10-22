@@ -198,34 +198,17 @@
     <!-- Список отчетов -->
     <div id="reportsContainer"></div>
 
+    <script src="sidebar.js"></script>
     <script src="app.js"></script>
     <script>
         const API_URL = window.location.protocol === 'file:' 
             ? 'http://localhost:4000/api' 
             : window.location.origin + '/api';
 
-        // Загрузка sidebar
-        document.addEventListener('DOMContentLoaded', async () => {
-            await loadSidebar();
+        // Загрузка страницы
+        document.addEventListener('DOMContentLoaded', () => {
             hideLoader();
         });
-
-        async function loadSidebar() {
-            try {
-                const response = await fetch('sidebar.html');
-                const html = await response.text();
-                document.getElementById('sidebar').innerHTML = html;
-                
-                const links = document.querySelectorAll('.sidebar-link');
-                links.forEach(link => {
-                    if (link.getAttribute('href') === 'reports-my.html') {
-                        link.classList.add('active');
-                    }
-                });
-            } catch (error) {
-                console.error('Ошибка загрузки sidebar:', error);
-            }
-        }
 
         function hideLoader() {
             const loader = document.getElementById('pageLoader');
