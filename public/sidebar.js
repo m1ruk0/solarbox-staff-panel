@@ -205,6 +205,37 @@ async function loadPendingCount() {
     }
 }
 
+// Обновление баланса в header
+async function updateHeaderBalance() {
+    try {
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
+        if (!user.discord) return;
+        
+        const API_URL = window.location.protocol === 'file:' 
+            ? 'http://localhost:4000/api' 
+            : window.location.origin + '/api';
+            
+        const response = await fetch(`${API_URL}/staff/${user.discord}`);
+        const data = await response.json();
+        
+        if (data.success && data.staff) {
+            const solariki = data.staff.solariki || 0;
+            
+            // Обновляем в localStorage
+            user.solariki = solariki;
+            localStorage.setItem('user', JSON.stringify(user));
+            
+            // Обновляем в header
+            const solarikiElement = document.querySelector('.header-user-solariki');
+            if (solarikiElement) {
+                solarikiElement.textContent = `☀️ ${solariki} соляриков`;
+            }
+        }
+    } catch (error) {
+        console.log('Не удалось обновить баланс');
+    }
+}
+
 // Инициализация при загрузке страницы
 document.addEventListener('DOMContentLoaded', () => {
     // Не создаем сайдбар на странице логина
@@ -212,6 +243,11 @@ document.addEventListener('DOMContentLoaded', () => {
         !window.location.pathname.includes('apply.html') &&
         !window.location.pathname.includes('landing.html')) {
         createSidebar();
+        
+        // Обновляем баланс через 1 секунду после загрузки
+        setTimeout(() => {
+            updateHeaderBalance();
+        }, 1000);
     }
 });
 

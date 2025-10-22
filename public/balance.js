@@ -1,4 +1,6 @@
-const API_URL = 'http://localhost:4000/api';
+const API_URL = window.location.protocol === 'file:' 
+    ? 'http://localhost:4000/api' 
+    : window.location.origin + '/api';
 
 // Проверка авторизации
 if (!localStorage.getItem('user')) {
