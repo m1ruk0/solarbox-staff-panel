@@ -52,6 +52,7 @@ class BugsDatabaseSupabase {
           description: bugData.description,
           status: 'Новый',
           priority: bugData.priority || 'Средний',
+          screenshot: bugData.screenshot || null,
           created_at: new Date().toISOString()
         }])
         .select();

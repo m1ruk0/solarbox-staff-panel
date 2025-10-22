@@ -1,5 +1,23 @@
 // Боковая панель навигации
 
+// Функция для получения иконки роли
+function getRoleIcon(position) {
+    const icons = {
+        'OWNER': '👑',
+        'RAZRAB': '💻',
+        'TEX.ADMIN': '🔧',
+        'ADMIN': '⚡',
+        'CURATOR': '📚',
+        'ZAM.CURATOR': '📖',
+        'MODERATOR': '🛡️',
+        'JR.MODERATOR': '🛡️',
+        'HELPER': '💬',
+        'BUILDER': '🏗️',
+        'JR.BUILDER': '🏗️'
+    };
+    return icons[position] || '👤';
+}
+
 // Создание сайдбара
 function createSidebar() {
     const currentPage = window.location.pathname.split('/').pop() || 'index.html';
@@ -80,7 +98,7 @@ function createSidebar() {
                     </div>
                     <div class="sidebar-user-info">
                         <div class="sidebar-user-name">${user.discord || 'Пользователь'}</div>
-                        <div class="sidebar-user-role">${user.position || 'STAFF'}</div>
+                        <div class="sidebar-user-role">${getRoleIcon(user.position)} ${user.position || 'STAFF'}</div>
                     </div>
                     <button onclick="logout()" class="btn btn-secondary btn-sm" style="padding: 0.5rem;">
                         <i class="fas fa-sign-out-alt"></i>

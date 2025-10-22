@@ -41,16 +41,56 @@ function showToast(message, type = 'success') {
     }, 4000);
 }
 
+// Превью скриншота
+function previewScreenshot(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    // Проверка размера (2MB)
+    if (file.size > 2 * 1024 * 1024) {
+        showToast('Файл слишком большой! Максимум 2MB', 'error');
+        event.target.value = '';
+        return;
+    }
+    
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        document.getElementById('previewImage').src = e.target.result;
+        document.getElementById('screenshotPreview').style.display = 'block';
+    };
+    reader.readAsDataURL(file);
+}
+
+// Удалить скриншот
+function removeScreenshot() {
+    document.getElementById('screenshot').value = '';
+    document.getElementById('screenshotPreview').style.display = 'none';
+    document.getElementById('previewImage').src = '';
+}
+
 // Отправка бага
 async function submitBug(event) {
     event.preventDefault();
+    
+    const screenshotFile = document.getElementById('screenshot').files[0];
+    let screenshotBase64 = null;
+    
+    // Конвертируем скриншот в base64
+    if (screenshotFile) {
+        screenshotBase64 = await new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onload = (e) => resolve(e.target.result);
+            reader.readAsDataURL(screenshotFile);
+        });
+    }
     
     const bugData = {
         discord: document.getElementById('discord').value.trim(),
         minecraft: document.getElementById('minecraft').value.trim() || null,
         title: document.getElementById('title').value.trim(),
         description: document.getElementById('description').value.trim(),
-        priority: document.getElementById('priority').value
+        priority: document.getElementById('priority').value,
+        screenshot: screenshotBase64
     };
     
     if (!bugData.discord || !bugData.title || !bugData.description) {
@@ -82,4 +122,5 @@ async function submitBug(event) {
 // Очистка формы
 function resetForm() {
     document.getElementById('bugForm').reset();
+    removeScreenshot();
 }

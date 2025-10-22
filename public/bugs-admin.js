@@ -142,7 +142,8 @@ function renderBugs(bugs) {
                 <div class="flex items-center justify-between text-sm text-gray-500">
                     <div class="flex items-center gap-4">
                         <span><i class="fab fa-discord mr-1"></i>${bug.discord}</span>
-                        ${bug.minecraft ? `<span><i class="fas fa-gamepad mr-1"></i>${bug.minecraft}</span>` : ''}
+                        ${bug.minecraft ? `<span><i class="fas fa-desktop mr-1"></i>${bug.minecraft}</span>` : ''}
+                        ${bug.screenshot ? `<span><i class="fas fa-image mr-1 text-pink-600"></i>Скриншот</span>` : ''}
                     </div>
                     <span><i class="fas fa-clock mr-1"></i>${date}</span>
                 </div>
@@ -189,6 +190,16 @@ function openBugModal(id) {
     document.getElementById('bugDescription').textContent = currentBug.description;
     document.getElementById('bugStatus').value = currentBug.status;
     document.getElementById('bugComment').value = currentBug.admin_comment || '';
+    
+    // Показываем скриншот если есть
+    const screenshotContainer = document.getElementById('bugScreenshotContainer');
+    const screenshotImg = document.getElementById('bugScreenshot');
+    if (currentBug.screenshot) {
+        screenshotImg.src = currentBug.screenshot;
+        screenshotContainer.style.display = 'block';
+    } else {
+        screenshotContainer.style.display = 'none';
+    }
     
     document.getElementById('bugModal').classList.add('active');
 }
