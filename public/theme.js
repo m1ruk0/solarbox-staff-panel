@@ -1,5 +1,13 @@
 // Общий файл для управления темой на всех страницах
 
+// Применяем темную тему ВСЕГДА (по умолчанию)
+document.documentElement.classList.add('dark-theme');
+if (document.body) {
+    document.body.classList.add('dark-theme');
+}
+// Устанавливаем в localStorage
+localStorage.setItem('theme', 'dark');
+
 // Переключение темы
 function toggleTheme() {
     const body = document.body;
@@ -19,11 +27,18 @@ function toggleTheme() {
 // Загрузка сохраненной темы
 function loadTheme() {
     const savedTheme = localStorage.getItem('theme');
-    const body = document.body;
-    const themeIcon = document.getElementById('themeIcon');
-    
+    // Применение темы ДО загрузки DOM (убирает мигание)
     if (savedTheme === 'dark') {
-        body.classList.add('dark-theme');
+        document.documentElement.classList.add('dark-theme');
+        document.body.classList.add('dark-theme');
+    }
+}
+
+// Обновление иконки после загрузки
+function updateThemeIcon() {
+    const themeIcon = document.getElementById('themeIcon');
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme === 'dark') {
         if (themeIcon) themeIcon.className = 'fas fa-sun';
     } else {
         if (themeIcon) themeIcon.className = 'fas fa-moon';

@@ -136,7 +136,7 @@ function renderApplications(applications) {
                 const isRejected = app.status === 'rejected' || app.status === 'Отклонена';
                 
                 return `
-                <div class="bg-white rounded-xl p-6 shadow-md border-l-4 ${
+                <div class="glass-card border-l-4 ${
                     isPending ? 'border-yellow-500' :
                     isApproved ? 'border-green-500' :
                     'border-red-500'
@@ -177,9 +177,9 @@ function renderApplications(applications) {
                     </div>
                     
                     ${app.experience ? `
-                    <div class="bg-gray-50 p-4 rounded-lg mb-4">
-                        <h4 class="font-bold text-gray-800 mb-3">📋 Ответы на вопросы:</h4>
-                        <div class="whitespace-pre-wrap text-gray-700">${app.experience}</div>
+                    <div class="bg-gray-800 bg-opacity-30 p-4 rounded-lg mb-4 border border-gray-700">
+                        <h4 class="font-bold text-gray-300 mb-3">📋 Ответы на вопросы:</h4>
+                        <div class="whitespace-pre-wrap text-gray-400">${app.experience}</div>
                     </div>
                     ` : ''}
                     
@@ -193,9 +193,9 @@ function renderApplications(applications) {
                     ` : ''}
                     
                     ${app.comment ? `
-                        <div class="bg-gray-50 p-3 rounded-lg mb-4">
-                            <p class="text-gray-700 mb-1"><strong>Комментарий:</strong></p>
-                            <p class="text-gray-800">${app.comment}</p>
+                        <div class="bg-gray-800 bg-opacity-30 p-3 rounded-lg mb-4 border border-gray-700">
+                            <p class="text-gray-300 mb-1"><strong>Комментарий:</strong></p>
+                            <p class="text-gray-400">${app.comment}</p>
                         </div>
                     ` : ''}
                     

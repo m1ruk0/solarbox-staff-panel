@@ -18,6 +18,32 @@ function getRoleIcon(position) {
     return icons[position] || '👤';
 }
 
+// Добавление блока пользователя в header
+function addUserToHeader() {
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    const headerCard = document.querySelector('.header-card');
+    
+    if (!headerCard || !user.discord) return;
+    
+    const userHTML = `
+        <div class="header-user">
+            <div class="header-user-avatar">
+                ${user.discord ? user.discord.charAt(0).toUpperCase() : 'U'}
+            </div>
+            <div class="header-user-info">
+                <div class="header-user-name">${user.discord || 'Пользователь'}</div>
+                <div class="header-user-role">${getRoleIcon(user.position)} ${user.position || 'STAFF'}</div>
+                <div class="header-user-solariki">☀️ ${user.solariki || 0} соляриков</div>
+            </div>
+            <button onclick="logout()" class="btn btn-danger btn-sm">
+                <i class="fas fa-sign-out-alt"></i>
+            </button>
+        </div>
+    `;
+    
+    headerCard.insertAdjacentHTML('beforeend', userHTML);
+}
+
 // Создание сайдбара
 function createSidebar() {
     const currentPage = window.location.pathname.split('/').pop() || 'index.html';
@@ -25,12 +51,6 @@ function createSidebar() {
     
     const sidebarHTML = `
         <div class="sidebar" id="sidebar">
-            <div class="sidebar-header">
-                <div class="sidebar-logo">
-                    <img src="icon.ico" alt="SolarBox" style="width: 32px; height: 32px; object-fit: contain;">
-                    <span>SolarBox</span>
-                </div>
-            </div>
             
             <nav class="sidebar-nav">
                 <div class="sidebar-section">
@@ -51,6 +71,14 @@ function createSidebar() {
                     <a href="applications-archive.html" class="sidebar-link ${currentPage === 'applications-archive.html' ? 'active' : ''}">
                         <i class="fas fa-archive"></i>
                         <span>Архив заявок</span>
+                    </a>
+                </div>
+                
+                <div class="sidebar-section">
+                    <div class="sidebar-section-title">Финансы</div>
+                    <a href="balance.html" class="sidebar-link ${currentPage === 'balance.html' ? 'active' : ''}">
+                        <i class="fas fa-coins"></i>
+                        <span>Баланс</span>
                     </a>
                 </div>
                 
@@ -80,31 +108,12 @@ function createSidebar() {
                 
                 <div class="sidebar-section">
                     <div class="sidebar-section-title">Настройки</div>
-                    <a href="#" onclick="toggleTheme(); return false;" class="sidebar-link">
-                        <i class="fas fa-moon" id="sidebarThemeIcon"></i>
-                        <span id="sidebarThemeText">Темная тема</span>
-                    </a>
                     <a href="#" onclick="toggleSnow(); return false;" class="sidebar-link">
                         <i class="fas fa-snowflake"></i>
                         <span>Снегопад</span>
                     </a>
                 </div>
             </nav>
-            
-            <div class="sidebar-footer">
-                <div class="sidebar-user">
-                    <div class="sidebar-user-avatar">
-                        ${user.discord ? user.discord.charAt(0).toUpperCase() : 'U'}
-                    </div>
-                    <div class="sidebar-user-info">
-                        <div class="sidebar-user-name">${user.discord || 'Пользователь'}</div>
-                        <div class="sidebar-user-role">${getRoleIcon(user.position)} ${user.position || 'STAFF'}</div>
-                    </div>
-                    <button onclick="logout()" class="btn btn-secondary btn-sm" style="padding: 0.5rem;">
-                        <i class="fas fa-sign-out-alt"></i>
-                    </button>
-                </div>
-            </div>
         </div>
         
         <button class="sidebar-toggle" onclick="toggleSidebar()">

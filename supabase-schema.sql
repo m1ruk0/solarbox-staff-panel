@@ -7,6 +7,7 @@ CREATE TABLE IF NOT EXISTS staff (
   warns INTEGER DEFAULT 0,
   vacation BOOLEAN DEFAULT FALSE,
   vacation_days INTEGER DEFAULT 0,
+  solariki INTEGER DEFAULT 0,
   status TEXT DEFAULT 'Активен',
   hire_date TEXT,
   fire_reason TEXT,

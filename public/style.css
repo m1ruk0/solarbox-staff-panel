@@ -1,5 +1,19 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
+/* Темная тема по умолчанию */
+html {
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+}
+
+html.dark-theme {
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+}
+
+/* Предотвращение смещения при загрузке */
+body {
+    margin-left: 70px;
+}
+
 * {
     font-family: 'Inter', sans-serif;
     margin: 0;
@@ -48,10 +62,74 @@ body.dark-theme {
 
 body.dark-theme .glass-card,
 body.dark-theme .header-card,
+body.dark-theme .staff-card,
 body.dark-theme .stat-card {
-    background: rgba(30, 30, 46, 0.95);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(30, 30, 46, 0.98);
     color: #e0e0e0;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Блок пользователя в header */
+.header-user {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.75rem 1rem;
+    background: rgba(102, 126, 234, 0.1);
+    border-radius: 1rem;
+}
+
+body.dark-theme .header-user {
+    background: rgba(102, 126, 234, 0.2);
+}
+
+.header-user-avatar {
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 700;
+    font-size: 1rem;
+}
+
+.header-user-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.header-user-name {
+    font-weight: 600;
+    color: #1f2937;
+    font-size: 0.95rem;
+}
+
+body.dark-theme .header-user-name {
+    color: #e0e0e0;
+}
+
+.header-user-role {
+    font-size: 0.8rem;
+    color: #6b7280;
+}
+
+body.dark-theme .header-user-role {
+    color: #9ca3af;
+}
+
+.header-user-solariki {
+    font-size: 0.75rem;
+    color: #f59e0b;
+    font-weight: 600;
+}
+
+body.dark-theme .header-user-solariki {
+    color: #fbbf24;
 }
 
 body.dark-theme h1,
@@ -473,6 +551,19 @@ body.dark-theme .btn-danger {
     gap: 1.5rem;
 }
 
+.header-card {
+    background: white;
+    border-radius: 1.5rem;
+    padding: 2rem;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    margin-bottom: 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
 .staff-card {
     background: white;
     border-radius: 1rem;
@@ -731,6 +822,9 @@ body.dark-theme .btn-danger {
     border-radius: 1.5rem;
     max-width: 500px;
     width: 100%;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
     animation: slideUp 0.3s ease;
 }
 
@@ -745,10 +839,13 @@ body.dark-theme .btn-danger {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    flex-shrink: 0;
 }
 
 .modal-body {
     padding: 1.5rem;
+    overflow-y: auto;
+    flex: 1;
 }
 
 .modal-footer {
@@ -757,6 +854,7 @@ body.dark-theme .btn-danger {
     display: flex;
     justify-content: flex-end;
     gap: 1rem;
+    flex-shrink: 0;
 }
 
 .action-buttons {

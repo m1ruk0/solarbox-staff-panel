@@ -41,6 +41,7 @@ class SnowEffect {
         this.ctx = this.canvas.getContext('2d');
         this.snowflakes = [];
         this.isActive = true;
+        this.animationId = null;
 
         // Стили canvas
         this.canvas.style.position = 'fixed';
@@ -78,16 +79,19 @@ class SnowEffect {
 
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
-        this.snowflakes.forEach(snowflake => {
-            snowflake.update();
-            snowflake.draw(this.ctx);
-        });
+        for (let i = 0; i < this.snowflakes.length; i++) {
+            this.snowflakes[i].update();
+            this.snowflakes[i].draw(this.ctx);
+        }
 
-        requestAnimationFrame(() => this.animate());
+        this.animationId = requestAnimationFrame(() => this.animate());
     }
 
     stop() {
         this.isActive = false;
+        if (this.animationId) {
+            cancelAnimationFrame(this.animationId);
+        }
         if (this.canvas && this.canvas.parentNode) {
             this.canvas.parentNode.removeChild(this.canvas);
         }
@@ -97,14 +101,29 @@ class SnowEffect {
 // Автоматически запускаем снегопад при загрузке страницы
 let snowEffect = null;
 
-document.addEventListener('DOMContentLoaded', () => {
-    // Проверяем настройку снегопада
-    const snowEnabled = localStorage.getItem('snowEnabled');
-    
-    if (snowEnabled === null || snowEnabled === 'true') {
-        snowEffect = new SnowEffect();
+function initSnow() {
+    try {
+        // Проверяем настройку снегопада
+        const snowEnabled = localStorage.getItem('snowEnabled');
+        
+        if (snowEnabled === null || snowEnabled === 'true') {
+            if (!snowEffect) {
+                snowEffect = new SnowEffect();
+                console.log('❄️ Снегопад активирован');
+            }
+        }
+    } catch (error) {
+        console.error('Ошибка инициализации снега:', error);
     }
-});
+}
+
+// Запускаем при загрузке DOM
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initSnow);
+} else {
+    // DOM уже загружен
+    initSnow();
+}
 
 // Функция для включения/выключения снегопада
 function toggleSnow() {

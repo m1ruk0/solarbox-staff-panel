@@ -85,7 +85,8 @@ class StaffDatabaseSupabase {
         warns: data.warns || 0,
         vacation: data.vacation ? 'Да' : 'Нет',
         status: data.status || 'Активен',
-        hireDate: data.hire_date || new Date().toLocaleDateString('ru-RU')
+        hireDate: data.hire_date || new Date().toLocaleDateString('ru-RU'),
+        solariki: data.solariki || 0
       };
     } catch (error) {
       console.error('Ошибка поиска сотрудника:', error);

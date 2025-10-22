@@ -59,7 +59,7 @@ function getRoleBadge(position) {
 // Обновление информации о пользователе
 function updateUserInfo() {
     const userInfoHTML = `
-        <div class="user-info-card bg-white rounded-lg shadow p-4 mb-6">
+        <div class="user-info-card glass-card mb-6">
             <div class="flex items-center justify-between">
                 <div>
                     <p class="text-sm text-gray-600 mb-2">Вы вошли как:</p>
