@@ -8,6 +8,7 @@ const passwordsDB = require('./passwords-database-supabase');
 const logsDB = require('./logs-database-supabase');
 const bugsDB = require('./bugs-database-supabase');
 const reportsDB = require('./reports-database-supabase');
+const withdrawalsDB = require('./withdrawals-database-supabase');
 const { hasPermission, canPromoteTo, getAvailablePositions, canManageStaffMember } = require('./roles');
 
 // Discord бот (опционально)
@@ -945,13 +946,13 @@ app.get('/api/reports/:id', async (req, res) => {
 app.post('/api/reports/:id/approve', async (req, res) => {
   try {
     const { id } = req.params;
-    const { reviewer, comment } = req.body;
+    const { reviewer, reviewer_position, comment } = req.body;
     
     if (!reviewer) {
       return res.status(400).json({ success: false, error: 'Не указан проверяющий' });
     }
     
-    const report = await reportsDB.approveReport(id, reviewer, comment || '');
+    const report = await reportsDB.approveReport(id, reviewer, reviewer_position, comment || '');
     res.json({ success: true, data: report });
   } catch (error) {
     console.error('Error approving report:', error);
@@ -963,13 +964,13 @@ app.post('/api/reports/:id/approve', async (req, res) => {
 app.post('/api/reports/:id/reject', async (req, res) => {
   try {
     const { id } = req.params;
-    const { reviewer, comment } = req.body;
+    const { reviewer, reviewer_position, comment } = req.body;
     
     if (!reviewer) {
       return res.status(400).json({ success: false, error: 'Не указан проверяющий' });
     }
     
-    const report = await reportsDB.rejectReport(id, reviewer, comment || '');
+    const report = await reportsDB.rejectReport(id, reviewer, reviewer_position, comment || '');
     res.json({ success: true, data: report });
   } catch (error) {
     console.error('Error rejecting report:', error);
@@ -984,6 +985,136 @@ app.get('/api/reports/stats', async (req, res) => {
     res.json({ success: true, data: stats });
   } catch (error) {
     console.error('Error getting stats:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// ============================================
+// ЗАЯВКИ НА ВЫВОД (WITHDRAWALS)
+// ============================================
+
+// Создать заявку на вывод
+app.post('/api/withdrawals', async (req, res) => {
+  try {
+    const { discord, minecraft, amount } = req.body;
+    
+    if (!discord || !minecraft || !amount) {
+      return res.status(400).json({ success: false, error: 'Не все поля заполнены' });
+    }
+    
+    if (amount < 100) {
+      return res.status(400).json({ success: false, error: 'Минимальная сумма вывода: 100 соляриков' });
+    }
+    
+    // Проверяем баланс пользователя
+    const staff = await staffDB.getStaffByDiscord(discord);
+    if (!staff) {
+      return res.status(404).json({ success: false, error: 'Пользователь не найден' });
+    }
+    
+    if (staff.solariki < amount) {
+      return res.status(400).json({ success: false, error: 'Недостаточно соляриков на балансе' });
+    }
+    
+    // Снимаем соларики с баланса
+    await staffDB.removeSolariki(discord, amount, 'Заявка на вывод');
+    
+    // Создаем заявку
+    const withdrawal = await withdrawalsDB.createWithdrawal({
+      discord,
+      minecraft,
+      amount
+    });
+    
+    res.json({ success: true, data: withdrawal });
+  } catch (error) {
+    console.error('Error creating withdrawal:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Получить все заявки
+app.get('/api/withdrawals', async (req, res) => {
+  try {
+    const withdrawals = await withdrawalsDB.getAllWithdrawals();
+    res.json({ success: true, data: withdrawals });
+  } catch (error) {
+    console.error('Error getting withdrawals:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Получить заявки пользователя
+app.get('/api/withdrawals/my', async (req, res) => {
+  try {
+    const { discord } = req.query;
+    
+    if (!discord) {
+      return res.status(400).json({ success: false, error: 'Discord не указан' });
+    }
+    
+    const withdrawals = await withdrawalsDB.getUserWithdrawals(discord);
+    res.json({ success: true, data: withdrawals });
+  } catch (error) {
+    console.error('Error getting user withdrawals:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Одобрить заявку
+app.post('/api/withdrawals/:id/approve', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { reviewer } = req.body;
+    
+    if (!reviewer) {
+      return res.status(400).json({ success: false, error: 'Не указан проверяющий' });
+    }
+    
+    const withdrawal = await withdrawalsDB.approveWithdrawal(id, reviewer);
+    res.json({ success: true, data: withdrawal });
+  } catch (error) {
+    console.error('Error approving withdrawal:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Отклонить заявку
+app.post('/api/withdrawals/:id/reject', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { reviewer, comment } = req.body;
+    
+    if (!reviewer) {
+      return res.status(400).json({ success: false, error: 'Не указан проверяющий' });
+    }
+    
+    if (!comment) {
+      return res.status(400).json({ success: false, error: 'Не указана причина отклонения' });
+    }
+    
+    // Получаем заявку
+    const withdrawal = await withdrawalsDB.getWithdrawalById(id);
+    
+    // Возвращаем соларики пользователю
+    await staffDB.addSolariki(withdrawal.discord, withdrawal.amount, 'Возврат за отклоненную заявку на вывод');
+    
+    // Отклоняем заявку
+    const rejectedWithdrawal = await withdrawalsDB.rejectWithdrawal(id, reviewer, comment);
+    res.json({ success: true, data: rejectedWithdrawal });
+  } catch (error) {
+    console.error('Error rejecting withdrawal:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Получить статистику заявок
+app.get('/api/withdrawals/stats', async (req, res) => {
+  try {
+    const stats = await withdrawalsDB.getStats();
+    res.json({ success: true, data: stats });
+  } catch (error) {
+    console.error('Error getting withdrawal stats:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 });

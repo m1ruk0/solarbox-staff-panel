@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="ru" class="dark-theme">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Заявка на вывод - SolarBox Staff Panel</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="sidebar.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div id="sidebar"></div>
+
+    <div class="container">
+        <div class="header-card">
+            <h1 class="page-title">
+                <i class="fas fa-money-bill-wave mr-3"></i>
+                Заявка на вывод соляриков
+            </h1>
+        </div>
+
+        <!-- Баланс -->
+        <div class="glass-card mb-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-gray-400 mb-2">Ваш баланс:</p>
+                    <h2 class="text-3xl font-bold text-white">
+                        <i class="fas fa-sun text-yellow-400 mr-2"></i>
+                        <span id="currentBalance">0</span> соляриков
+                    </h2>
+                </div>
+                <div class="text-right">
+                    <p class="text-sm text-gray-400">Минимальная сумма вывода:</p>
+                    <p class="text-xl font-bold text-indigo-400">100 соляриков</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Форма заявки -->
+        <div class="glass-card">
+            <h2 class="text-2xl font-bold text-white mb-6">
+                <i class="fas fa-file-invoice mr-2"></i>
+                Создать заявку
+            </h2>
+
+            <form id="withdrawalForm" onsubmit="submitWithdrawal(event)">
+                <div class="mb-6">
+                    <label class="block text-sm font-medium text-gray-400 mb-2">
+                        <i class="fas fa-user mr-2"></i>Ваш Discord
+                    </label>
+                    <input type="text" id="discordInput" class="input-field" readonly>
+                </div>
+
+                <div class="mb-6">
+                    <label class="block text-sm font-medium text-gray-400 mb-2">
+                        <i class="fas fa-gamepad mr-2"></i>Никнейм в Minecraft
+                    </label>
+                    <input type="text" id="minecraftInput" class="input-field" placeholder="Введите ваш никнейм" required>
+                </div>
+
+                <div class="mb-6">
+                    <label class="block text-sm font-medium text-gray-400 mb-2">
+                        <i class="fas fa-coins mr-2"></i>Количество соляриков
+                    </label>
+                    <input type="number" id="amountInput" class="input-field" placeholder="Введите сумму" min="100" required>
+                    <p class="text-xs text-gray-500 mt-2">
+                        <i class="fas fa-info-circle mr-1"></i>
+                        Минимум: 100, Максимум: <span id="maxAmount">0</span>
+                    </p>
+                </div>
+
+                <div class="flex gap-4">
+                    <button type="submit" class="btn btn-primary flex-1">
+                        <i class="fas fa-paper-plane mr-2"></i>
+                        Отправить заявку
+                    </button>
+                    <button type="button" onclick="resetForm()" class="btn btn-secondary">
+                        <i class="fas fa-redo mr-2"></i>
+                        Сбросить
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Мои заявки -->
+        <div class="glass-card mt-6">
+            <h2 class="text-2xl font-bold text-white mb-4">
+                <i class="fas fa-history mr-2"></i>
+                Мои заявки
+            </h2>
+            <div id="myWithdrawals"></div>
+        </div>
+    </div>
+
+    <script src="sidebar.js"></script>
+    <script src="app.js"></script>
+    <script>
+        let currentBalance = 0;
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            const user = JSON.parse(localStorage.getItem('user') || '{}');
+            if (!user.discord) {
+                showToast('Пожалуйста, войдите в систему', 'error');
+                setTimeout(() => window.location.href = 'login.html', 2000);
+                return;
+            }
+
+            document.getElementById('discordInput').value = user.discord;
+            document.getElementById('minecraftInput').value = user.minecraft || '';
+            
+            await loadBalance();
+            await loadMyWithdrawals();
+        });
+
+        async function loadBalance() {
+            try {
+                const user = JSON.parse(localStorage.getItem('user'));
+                const response = await fetch(`${API_URL}/staff`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    const staff = data.data.find(s => s.discord === user.discord);
+                    if (staff) {
+                        currentBalance = staff.solariki || 0;
+                        document.getElementById('currentBalance').textContent = currentBalance;
+                        document.getElementById('maxAmount').textContent = currentBalance;
+                        document.getElementById('amountInput').max = currentBalance;
+                    }
+                }
+            } catch (error) {
+                console.error('Ошибка загрузки баланса:', error);
+            }
+        }
+
+        async function submitWithdrawal(event) {
+            event.preventDefault();
+            
+            const user = JSON.parse(localStorage.getItem('user'));
+            const minecraft = document.getElementById('minecraftInput').value.trim();
+            const amount = parseInt(document.getElementById('amountInput').value);
+            
+            if (amount < 100) {
+                showToast('Минимальная сумма вывода: 100 соляриков', 'error');
+                return;
+            }
+            
+            if (amount > currentBalance) {
+                showToast('Недостаточно соляриков на балансе', 'error');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_URL}/withdrawals`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        discord: user.discord,
+                        minecraft: minecraft,
+                        amount: amount
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showToast('Заявка успешно отправлена!', 'success');
+                    resetForm();
+                    await loadBalance();
+                    await loadMyWithdrawals();
+                } else {
+                    showToast(data.error || 'Ошибка отправки заявки', 'error');
+                }
+            } catch (error) {
+                console.error('Ошибка:', error);
+                showToast('Ошибка соединения с сервером', 'error');
+            }
+        }
+
+        async function loadMyWithdrawals() {
+            try {
+                const user = JSON.parse(localStorage.getItem('user'));
+                const response = await fetch(`${API_URL}/withdrawals/my?discord=${encodeURIComponent(user.discord)}`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    displayWithdrawals(data.data);
+                }
+            } catch (error) {
+                console.error('Ошибка:', error);
+            }
+        }
+
+        function displayWithdrawals(withdrawals) {
+            const container = document.getElementById('myWithdrawals');
+            
+            if (withdrawals.length === 0) {
+                container.innerHTML = '<p class="text-gray-400 text-center py-8">У вас пока нет заявок</p>';
+                return;
+            }
+            
+            container.innerHTML = withdrawals.map(w => `
+                <div class="bg-gray-800 bg-opacity-50 rounded-lg p-4 mb-3">
+                    <div class="flex items-center justify-between mb-2">
+                        <div class="flex items-center gap-3">
+                            <span class="text-2xl">${getStatusIcon(w.status)}</span>
+                            <div>
+                                <p class="font-bold text-white">${w.amount} соляриков</p>
+                                <p class="text-sm text-gray-400">${w.minecraft}</p>
+                            </div>
+                        </div>
+                        ${getStatusBadge(w.status)}
+                    </div>
+                    ${w.reviewer ? `
+                        <div class="mt-3 pt-3 border-t border-gray-700">
+                            <p class="text-sm text-gray-400">
+                                <i class="fas fa-user-check mr-2"></i>Проверил: ${w.reviewer}
+                            </p>
+                            ${w.comment ? `<p class="text-sm text-gray-400 mt-1"><i class="fas fa-comment mr-2"></i>${w.comment}</p>` : ''}
+                        </div>
+                    ` : ''}
+                    <p class="text-xs text-gray-500 mt-2">
+                        <i class="far fa-clock mr-1"></i>${new Date(w.created_at).toLocaleString('ru-RU')}
+                    </p>
+                </div>
+            `).join('');
+        }
+
+        function getStatusIcon(status) {
+            const icons = {
+                'pending': '⏳',
+                'approved': '✅',
+                'rejected': '❌'
+            };
+            return icons[status] || '📋';
+        }
+
+        function getStatusBadge(status) {
+            const badges = {
+                'pending': '<span class="px-3 py-1 bg-yellow-500 bg-opacity-20 text-yellow-400 rounded-full text-sm">На рассмотрении</span>',
+                'approved': '<span class="px-3 py-1 bg-green-500 bg-opacity-20 text-green-400 rounded-full text-sm">Одобрено</span>',
+                'rejected': '<span class="px-3 py-1 bg-red-500 bg-opacity-20 text-red-400 rounded-full text-sm">Отклонено</span>'
+            };
+            return badges[status] || '';
+        }
+
+        function resetForm() {
+            document.getElementById('withdrawalForm').reset();
+            const user = JSON.parse(localStorage.getItem('user'));
+            document.getElementById('discordInput').value = user.discord;
+            document.getElementById('minecraftInput').value = user.minecraft || '';
+        }
+
+        function showToast(message, type = 'info') {
+            const toast = document.createElement('div');
+            toast.className = `fixed top-4 right-4 px-6 py-4 rounded-lg shadow-lg z-50 ${type === 'success' ? 'bg-green-600' : type === 'error' ? 'bg-red-600' : 'bg-gray-800'} text-white border ${type === 'success' ? 'border-green-500' : type === 'error' ? 'border-red-500' : 'border-gray-600'}`;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.remove();
+            }, 4000);
+        }
+    </script>
+</body>
+</html>

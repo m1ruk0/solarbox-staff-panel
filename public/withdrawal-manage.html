@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="ru" class="dark-theme">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Управление выводом - SolarBox Staff Panel</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="sidebar.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div id="sidebar"></div>
+
+    <div class="container">
+        <div class="header-card">
+            <h1 class="page-title">
+                <i class="fas fa-tasks mr-3"></i>
+                Управление выводом соляриков
+            </h1>
+        </div>
+
+        <!-- Статистика -->
+        <div class="stats-grid mb-6">
+            <div class="stat-card">
+                <div class="stat-content">
+                    <div class="stat-label">Всего заявок</div>
+                    <div class="stat-value" id="totalWithdrawals">0</div>
+                </div>
+                <div class="stat-icon">
+                    <i class="fas fa-file-invoice"></i>
+                </div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-content">
+                    <div class="stat-label">На рассмотрении</div>
+                    <div class="stat-value" id="pendingWithdrawals">0</div>
+                </div>
+                <div class="stat-icon stat-icon-yellow">
+                    <i class="fas fa-clock"></i>
+                </div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-content">
+                    <div class="stat-label">Одобрено</div>
+                    <div class="stat-value" id="approvedWithdrawals">0</div>
+                </div>
+                <div class="stat-icon stat-icon-green">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-content">
+                    <div class="stat-label">Отклонено</div>
+                    <div class="stat-value" id="rejectedWithdrawals">0</div>
+                </div>
+                <div class="stat-icon stat-icon-red">
+                    <i class="fas fa-times-circle"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Фильтры -->
+        <div class="glass-card mb-6">
+            <div class="filter-tabs">
+                <div class="filter-tab active">
+                    <i class="fas fa-list mr-2"></i>Все
+                </div>
+                <div class="filter-tab">
+                    <i class="fas fa-clock mr-2"></i>На рассмотрении
+                </div>
+                <div class="filter-tab">
+                    <i class="fas fa-check-circle mr-2"></i>Одобренные
+                </div>
+                <div class="filter-tab">
+                    <i class="fas fa-times-circle mr-2"></i>Отклоненные
+                </div>
+            </div>
+        </div>
+
+        <!-- Список заявок -->
+        <div id="withdrawalsContainer"></div>
+    </div>
+
+    <!-- Модальное окно одобрения -->
+    <div id="approveModal" class="modal">
+        <div class="modal-content">
+            <h3 class="text-2xl font-bold text-white mb-4">
+                <i class="fas fa-check-circle text-green-500 mr-2"></i>
+                Одобрить заявку
+            </h3>
+            <p class="text-gray-400 mb-4">Вы уверены что хотите одобрить эту заявку?</p>
+            <div class="flex gap-3">
+                <button onclick="confirmApprove()" class="btn btn-primary flex-1">
+                    <i class="fas fa-check mr-2"></i>Одобрить
+                </button>
+                <button onclick="closeModal('approveModal')" class="btn btn-secondary">
+                    <i class="fas fa-times mr-2"></i>Отмена
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно отклонения -->
+    <div id="rejectModal" class="modal">
+        <div class="modal-content">
+            <h3 class="text-2xl font-bold text-white mb-4">
+                <i class="fas fa-times-circle text-red-500 mr-2"></i>
+                Отклонить заявку
+            </h3>
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-400 mb-2">
+                    Причина отклонения (обязательно)
+                </label>
+                <textarea id="rejectComment" class="input-field" rows="3" 
+                    placeholder="Укажите причину отклонения..."></textarea>
+            </div>
+            <div class="flex gap-3">
+                <button onclick="confirmReject()" class="btn btn-danger flex-1">
+                    <i class="fas fa-times mr-2"></i>Отклонить
+                </button>
+                <button onclick="closeModal('rejectModal')" class="btn btn-secondary">
+                    <i class="fas fa-ban mr-2"></i>Отмена
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="sidebar.js"></script>
+    <script src="app.js"></script>
+    <script>
+        let allWithdrawals = [];
+        let currentFilter = 'all';
+        let currentWithdrawalId = null;
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            checkAuth();
+            await loadWithdrawals();
+            initializeFilters();
+        });
+
+        function initializeFilters() {
+            const filterTabs = document.querySelectorAll('.filter-tab');
+            filterTabs.forEach(tab => {
+                tab.addEventListener('click', function() {
+                    const filter = this.textContent.includes('Все') ? 'all' :
+                                   this.textContent.includes('рассмотрении') ? 'pending' :
+                                   this.textContent.includes('Одобренные') ? 'approved' : 'rejected';
+                    filterWithdrawals(filter, this);
+                });
+            });
+        }
+
+        function checkAuth() {
+            const userStr = localStorage.getItem('user');
+            if (!userStr) {
+                window.location.href = 'login.html';
+                return;
+            }
+            currentUser = JSON.parse(userStr);
+        }
+
+        async function loadWithdrawals() {
+            try {
+                const response = await fetch(`${API_URL}/withdrawals`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    allWithdrawals = data.data;
+                    updateStats();
+                    displayWithdrawals();
+                } else {
+                    showToast(data.error || 'Ошибка загрузки заявок', 'error');
+                }
+            } catch (error) {
+                console.error('Ошибка:', error);
+                showToast('Ошибка соединения с сервером', 'error');
+            }
+        }
+
+        function updateStats() {
+            document.getElementById('totalWithdrawals').textContent = allWithdrawals.length;
+            document.getElementById('pendingWithdrawals').textContent = allWithdrawals.filter(w => w.status === 'pending').length;
+            document.getElementById('approvedWithdrawals').textContent = allWithdrawals.filter(w => w.status === 'approved').length;
+            document.getElementById('rejectedWithdrawals').textContent = allWithdrawals.filter(w => w.status === 'rejected').length;
+        }
+
+        function filterWithdrawals(filter, element) {
+            currentFilter = filter;
+            
+            document.querySelectorAll('.filter-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            if (element) {
+                element.classList.add('active');
+            }
+            
+            displayWithdrawals();
+        }
+
+        function displayWithdrawals() {
+            const container = document.getElementById('withdrawalsContainer');
+            
+            let filtered = allWithdrawals;
+            if (currentFilter !== 'all') {
+                filtered = allWithdrawals.filter(w => w.status === currentFilter);
+            }
+            
+            if (filtered.length === 0) {
+                container.innerHTML = `
+                    <div class="glass-card">
+                        <p class="text-gray-400 text-center py-8">Заявок не найдено</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = filtered.map((w, index) => `
+                <div class="glass-card mb-4">
+                    <div class="flex items-start justify-between mb-4">
+                        <div class="flex items-center gap-3">
+                            <span class="text-3xl">${getStatusIcon(w.status)}</span>
+                            <div>
+                                <h3 class="text-xl font-bold text-white">${w.discord}</h3>
+                                <p class="text-gray-400">
+                                    <i class="fas fa-gamepad mr-2"></i>${w.minecraft}
+                                </p>
+                            </div>
+                        </div>
+                        ${getStatusBadge(w.status)}
+                    </div>
+                    
+                    <div class="mb-4">
+                        <p class="text-2xl font-bold text-yellow-400">
+                            <i class="fas fa-coins mr-2"></i>${w.amount} соляриков
+                        </p>
+                    </div>
+                    
+                    ${w.status === 'pending' ? `
+                        <div class="flex gap-3 mt-4">
+                            <button onclick="openApproveModal('${w.id}')" class="btn btn-primary flex-1">
+                                <i class="fas fa-check mr-2"></i>Одобрить
+                            </button>
+                            <button onclick="openRejectModal('${w.id}')" class="btn btn-danger flex-1">
+                                <i class="fas fa-times mr-2"></i>Отклонить
+                            </button>
+                        </div>
+                    ` : ''}
+                    
+                    ${w.reviewer ? `
+                        <div class="mt-4 pt-4 border-t border-gray-700">
+                            <p class="text-sm text-gray-400">
+                                <i class="fas fa-user-check mr-2"></i>
+                                <strong>Проверил:</strong> ${w.reviewer}
+                            </p>
+                            ${w.comment ? `
+                                <p class="text-sm text-gray-400 mt-2">
+                                    <i class="fas fa-comment mr-2"></i>
+                                    <strong>Комментарий:</strong> ${w.comment}
+                                </p>
+                            ` : ''}
+                            <p class="text-xs text-gray-500 mt-2">
+                                <i class="far fa-clock mr-1"></i>${new Date(w.reviewed_at).toLocaleString('ru-RU')}
+                            </p>
+                        </div>
+                    ` : ''}
+                    
+                    <div class="mt-4 text-xs text-gray-500">
+                        <i class="fas fa-hashtag mr-1"></i>Заявка №${index + 1} • 
+                        <i class="far fa-calendar mr-1"></i>${new Date(w.created_at).toLocaleString('ru-RU')}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function getStatusIcon(status) {
+            const icons = {
+                'pending': '⏳',
+                'approved': '✅',
+                'rejected': '❌'
+            };
+            return icons[status] || '📋';
+        }
+
+        function getStatusBadge(status) {
+            const badges = {
+                'pending': '<span class="px-4 py-2 bg-yellow-500 bg-opacity-20 text-yellow-400 rounded-full font-medium"><i class="fas fa-clock mr-2"></i>На рассмотрении</span>',
+                'approved': '<span class="px-4 py-2 bg-green-500 bg-opacity-20 text-green-400 rounded-full font-medium"><i class="fas fa-check-circle mr-2"></i>Одобрено</span>',
+                'rejected': '<span class="px-4 py-2 bg-red-500 bg-opacity-20 text-red-400 rounded-full font-medium"><i class="fas fa-times-circle mr-2"></i>Отклонено</span>'
+            };
+            return badges[status] || '';
+        }
+
+        function openApproveModal(id) {
+            currentWithdrawalId = id;
+            document.getElementById('approveModal').classList.add('active');
+        }
+
+        function openRejectModal(id) {
+            currentWithdrawalId = id;
+            document.getElementById('rejectComment').value = '';
+            document.getElementById('rejectModal').classList.add('active');
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+            currentWithdrawalId = null;
+        }
+
+        async function confirmApprove() {
+            try {
+                const response = await fetch(`${API_URL}/withdrawals/${currentWithdrawalId}/approve`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        reviewer: currentUser.discord
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showToast('Заявка одобрена!', 'success');
+                    closeModal('approveModal');
+                    await loadWithdrawals();
+                } else {
+                    showToast(data.error || 'Ошибка одобрения заявки', 'error');
+                }
+            } catch (error) {
+                console.error('Ошибка:', error);
+                showToast('Ошибка соединения с сервером', 'error');
+            }
+        }
+
+        async function confirmReject() {
+            const comment = document.getElementById('rejectComment').value.trim();
+            
+            if (!comment) {
+                showToast('Укажите причину отклонения', 'error');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_URL}/withdrawals/${currentWithdrawalId}/reject`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        reviewer: currentUser.discord,
+                        comment
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showToast('Заявка отклонена', 'info');
+                    closeModal('rejectModal');
+                    await loadWithdrawals();
+                } else {
+                    showToast(data.error || 'Ошибка отклонения заявки', 'error');
+                }
+            } catch (error) {
+                console.error('Ошибка:', error);
+                showToast('Ошибка соединения с сервером', 'error');
+            }
+        }
+
+        function showToast(message, type = 'info') {
+            const toast = document.createElement('div');
+            toast.className = `fixed top-4 right-4 px-6 py-4 rounded-lg shadow-lg z-50 ${type === 'success' ? 'bg-green-600' : type === 'error' ? 'bg-red-600' : 'bg-gray-800'} text-white border ${type === 'success' ? 'border-green-500' : type === 'error' ? 'border-red-500' : 'border-gray-600'}`;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.remove();
+            }, 4000);
+        }
+    </script>
+</body>
+</html>

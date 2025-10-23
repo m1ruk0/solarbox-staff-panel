@@ -134,11 +134,7 @@
     <script src="sidebar.js"></script>
     <script src="app.js"></script>
     <script>
-        const API_URL = window.location.protocol === 'file:' 
-            ? 'http://localhost:4000/api' 
-            : window.location.origin + '/api';
-
-        let currentUser = null;
+        // currentUser будет из app.js
 
         // Загрузка страницы
         document.addEventListener('DOMContentLoaded', async () => {
@@ -192,9 +188,10 @@
                 'mute': 'Мут',
                 'warn': 'Варн',
                 'kick': 'Кик',
+                'daily_report': 'Ежедневный отчет',
                 'other': 'Другое'
             };
-            return names[type] || type;
+            return names[type] || 'Отчет';
         }
 
         function getStatusBadge(status) {
@@ -258,7 +255,7 @@
                 return;
             }
             
-            container.innerHTML = reports.map(report => `
+            container.innerHTML = reports.map((report, index) => `
                 <div class="report-card">
                     <div class="flex items-start justify-between mb-4">
                         <div class="flex items-center gap-3">
@@ -274,18 +271,12 @@
                     
                     <div class="mb-4">
                         <h3 class="text-xl font-bold text-white mb-2">
-                            <i class="fas fa-user mr-2"></i>${report.player_nickname}
+                            <i class="fas fa-user mr-2"></i>Автор: ${report.author || 'Неизвестно'}
                         </h3>
                         <p class="text-gray-400">
-                            <i class="fas fa-exclamation-circle mr-2"></i>
-                            <strong>Причина:</strong> ${report.reason}
+                            <i class="fas fa-hashtag mr-2"></i>
+                            <strong>Количество отчетов:</strong> ${report.player_nickname || '1'}
                         </p>
-                        ${report.description ? `
-                            <p class="text-gray-400 mt-2">
-                                <i class="fas fa-align-left mr-2"></i>
-                                <strong>Описание:</strong> ${report.description}
-                            </p>
-                        ` : ''}
                     </div>
                     
                     ${report.screenshots && report.screenshots.length > 0 ? `
@@ -301,6 +292,12 @@
                                         alt="Скриншот ${idx + 1}">
                                 `).join('')}
                             </div>
+                            ${report.screenshots.length >= 2 ? `
+                                <button onclick="openAllScreenshots(${JSON.stringify(report.screenshots).replace(/"/g, '&quot;')})"
+                                    class="mt-3 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors">
+                                    <i class="fas fa-expand mr-2"></i>Просмотреть все в полном экране
+                                </button>
+                            ` : ''}
                         </div>
                     ` : ''}
                     
@@ -323,7 +320,7 @@
                     ` : ''}
                     
                     <div class="mt-4 text-xs text-gray-500">
-                        <i class="fas fa-hashtag mr-1"></i>ID: ${report.id}
+                        <i class="fas fa-hashtag mr-1"></i>Отчет №${index + 1}
                     </div>
                 </div>
             `).join('');
@@ -340,6 +337,70 @@
             
             modal.appendChild(img);
             modal.onclick = () => modal.remove();
+            document.body.appendChild(modal);
+        }
+
+        // Просмотр всех скриншотов в полном экране
+        function openAllScreenshots(screenshots) {
+            let currentIndex = 0;
+            
+            const modal = document.createElement('div');
+            modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 10000; display: flex; align-items: center; justify-content: center;';
+            
+            const img = document.createElement('img');
+            img.style.cssText = 'max-width: 85%; max-height: 85%; border-radius: 8px; transition: opacity 0.3s;';
+            img.src = screenshots[currentIndex];
+            
+            const counter = document.createElement('div');
+            counter.style.cssText = 'position: absolute; top: 20px; left: 50%; transform: translateX(-50%); color: white; font-size: 18px; background: rgba(0,0,0,0.7); padding: 10px 20px; border-radius: 8px;';
+            counter.textContent = `${currentIndex + 1} / ${screenshots.length}`;
+            
+            const prevBtn = document.createElement('button');
+            prevBtn.innerHTML = '<i class="fas fa-chevron-left"></i>';
+            prevBtn.style.cssText = 'position: absolute; left: 20px; top: 50%; transform: translateY(-50%); background: rgba(255,255,255,0.2); border: none; color: white; font-size: 24px; padding: 15px 20px; border-radius: 8px; cursor: pointer; transition: background 0.3s;';
+            prevBtn.onmouseover = () => prevBtn.style.background = 'rgba(255,255,255,0.3)';
+            prevBtn.onmouseout = () => prevBtn.style.background = 'rgba(255,255,255,0.2)';
+            prevBtn.onclick = (e) => {
+                e.stopPropagation();
+                currentIndex = (currentIndex - 1 + screenshots.length) % screenshots.length;
+                img.style.opacity = '0';
+                setTimeout(() => {
+                    img.src = screenshots[currentIndex];
+                    counter.textContent = `${currentIndex + 1} / ${screenshots.length}`;
+                    img.style.opacity = '1';
+                }, 150);
+            };
+            
+            const nextBtn = document.createElement('button');
+            nextBtn.innerHTML = '<i class="fas fa-chevron-right"></i>';
+            nextBtn.style.cssText = 'position: absolute; right: 20px; top: 50%; transform: translateY(-50%); background: rgba(255,255,255,0.2); border: none; color: white; font-size: 24px; padding: 15px 20px; border-radius: 8px; cursor: pointer; transition: background 0.3s;';
+            nextBtn.onmouseover = () => nextBtn.style.background = 'rgba(255,255,255,0.3)';
+            nextBtn.onmouseout = () => nextBtn.style.background = 'rgba(255,255,255,0.2)';
+            nextBtn.onclick = (e) => {
+                e.stopPropagation();
+                currentIndex = (currentIndex + 1) % screenshots.length;
+                img.style.opacity = '0';
+                setTimeout(() => {
+                    img.src = screenshots[currentIndex];
+                    counter.textContent = `${currentIndex + 1} / ${screenshots.length}`;
+                    img.style.opacity = '1';
+                }, 150);
+            };
+            
+            const closeBtn = document.createElement('button');
+            closeBtn.innerHTML = '<i class="fas fa-times"></i>';
+            closeBtn.style.cssText = 'position: absolute; top: 20px; right: 20px; background: rgba(255,255,255,0.2); border: none; color: white; font-size: 24px; padding: 10px 15px; border-radius: 8px; cursor: pointer; transition: background 0.3s;';
+            closeBtn.onmouseover = () => closeBtn.style.background = 'rgba(255,255,255,0.3)';
+            closeBtn.onmouseout = () => closeBtn.style.background = 'rgba(255,255,255,0.2)';
+            closeBtn.onclick = () => modal.remove();
+            
+            modal.appendChild(img);
+            modal.appendChild(counter);
+            modal.appendChild(prevBtn);
+            modal.appendChild(nextBtn);
+            modal.appendChild(closeBtn);
+            modal.onclick = () => modal.remove();
+            
             document.body.appendChild(modal);
         }
     </script>

@@ -90,6 +90,19 @@ function createSidebar() {
                     </a>
                 </div>
                 
+                <div class="sidebar-section">
+                    <div class="sidebar-section-title">Вывод</div>
+                    <a href="withdrawal-submit.html" class="sidebar-link ${currentPage === 'withdrawal-submit.html' ? 'active' : ''}">
+                        <i class="fas fa-money-bill-wave"></i>
+                        <span>Заявка на вывод</span>
+                    </a>
+                    <a href="withdrawal-manage.html" class="sidebar-link ${currentPage === 'withdrawal-manage.html' ? 'active' : ''}" id="withdrawalManageLink" style="display: none;">
+                        <i class="fas fa-hand-holding-usd"></i>
+                        <span>Управление выводом</span>
+                        <span class="sidebar-link-badge" id="pendingWithdrawalsBadge" style="display: none;">0</span>
+                    </a>
+                </div>
+                
                 <div class="sidebar-section" id="adminSection" style="display: none;">
                     <div class="sidebar-section-title">Администрирование</div>
                     <a href="admin-passwords.html" class="sidebar-link ${currentPage === 'admin-passwords.html' ? 'active' : ''}">
@@ -186,6 +199,14 @@ function checkAdminRights() {
         const reportsManageLink = document.getElementById('reportsManageLink');
         if (reportsManageLink) {
             reportsManageLink.style.display = 'flex';
+        }
+    }
+    
+    // Показываем управление выводом для ZAM.CURATOR и выше
+    if (moderatorPositions.includes(user.position)) {
+        const withdrawalManageLink = document.getElementById('withdrawalManageLink');
+        if (withdrawalManageLink) {
+            withdrawalManageLink.style.display = 'flex';
         }
     }
 }

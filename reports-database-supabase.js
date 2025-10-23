@@ -87,15 +87,16 @@ class ReportsDatabase {
   }
 
   // Одобрить отчет
-  async approveReport(id, reviewer, comment) {
+  async approveReport(id, reviewer, reviewer_position, comment) {
     try {
       const { data, error } = await supabase
         .from('reports')
         .update({
           status: 'approved',
           reviewer: reviewer,
+          reviewer_position: reviewer_position || '',
           review_comment: comment,
-          updated_at: new Date().toISOString()
+          reviewed_at: new Date().toISOString()
         })
         .eq('id', id)
         .select()
@@ -110,15 +111,16 @@ class ReportsDatabase {
   }
 
   // Отклонить отчет
-  async rejectReport(id, reviewer, comment) {
+  async rejectReport(id, reviewer, reviewer_position, comment) {
     try {
       const { data, error } = await supabase
         .from('reports')
         .update({
           status: 'rejected',
           reviewer: reviewer,
+          reviewer_position: reviewer_position || '',
           review_comment: comment,
-          updated_at: new Date().toISOString()
+          reviewed_at: new Date().toISOString()
         })
         .eq('id', id)
         .select()

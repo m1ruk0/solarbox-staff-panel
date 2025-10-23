@@ -284,16 +284,16 @@
     <!-- Фильтры -->
     <div class="glass-card mb-6">
         <div class="filter-tabs">
-            <div class="filter-tab active" onclick="filterReports('all', this)">
+            <div class="filter-tab active">
                 <i class="fas fa-list mr-2"></i>Все
             </div>
-            <div class="filter-tab" onclick="filterReports('pending', this)">
+            <div class="filter-tab">
                 <i class="fas fa-clock mr-2"></i>На рассмотрении
             </div>
-            <div class="filter-tab" onclick="filterReports('approved', this)">
+            <div class="filter-tab">
                 <i class="fas fa-check-circle mr-2"></i>Одобренные
             </div>
-            <div class="filter-tab" onclick="filterReports('rejected', this)">
+            <div class="filter-tab">
                 <i class="fas fa-times-circle mr-2"></i>Отклоненные
             </div>
         </div>
@@ -305,11 +305,7 @@
     <script src="sidebar.js"></script>
     <script src="app.js"></script>
     <script>
-        const API_URL = window.location.protocol === 'file:' 
-            ? 'http://localhost:4000/api' 
-            : window.location.origin + '/api';
-
-        let currentUser = null;
+        // Используем API_URL и currentUser из app.js
         let allReports = [];
         let currentFilter = 'all';
         let currentReportId = null;
@@ -318,7 +314,20 @@
         document.addEventListener('DOMContentLoaded', async () => {
             checkAuth();
             await loadReports();
+            initializeFilters();
         });
+
+        function initializeFilters() {
+            const filterTabs = document.querySelectorAll('.filter-tab');
+            filterTabs.forEach(tab => {
+                tab.addEventListener('click', function() {
+                    const filter = this.textContent.includes('Все') ? 'all' :
+                                   this.textContent.includes('рассмотрении') ? 'pending' :
+                                   this.textContent.includes('Одобренные') ? 'approved' : 'rejected';
+                    filterReports(filter, this);
+                });
+            });
+        }
 
         function checkAuth() {
             const userStr = localStorage.getItem('user');
@@ -329,26 +338,14 @@
             currentUser = JSON.parse(userStr);
         }
 
-        function showToast(message, type = 'success') {
-            const container = document.getElementById('toastContainer');
+        function showToast(message, type = 'info') {
             const toast = document.createElement('div');
-            toast.className = `toast ${type}`;
-            
-            const icon = type === 'success' ? 'fa-check-circle' : type === 'error' ? 'fa-times-circle' : 'fa-info-circle';
-            
-            toast.innerHTML = `
-                <i class="fas ${icon} toast-icon"></i>
-                <div class="toast-message">${message}</div>
-                <button class="toast-close" onclick="this.parentElement.remove()">
-                    <i class="fas fa-times"></i>
-                </button>
-            `;
-            
-            container.appendChild(toast);
+            toast.className = `fixed top-4 right-4 px-6 py-4 rounded-lg shadow-lg z-50 ${type === 'success' ? 'bg-green-600' : type === 'error' ? 'bg-red-600' : 'bg-gray-800'} text-white border ${type === 'success' ? 'border-green-500' : type === 'error' ? 'border-red-500' : 'border-gray-600'}`;
+            toast.textContent = message;
+            document.body.appendChild(toast);
             
             setTimeout(() => {
-                toast.classList.add('removing');
-                setTimeout(() => toast.remove(), 300);
+                toast.remove();
             }, 4000);
         }
 
@@ -356,7 +353,7 @@
             if (!currentUser) return;
             
             try {
-                const response = await fetch(`${API_URL}/reports?discord=${encodeURIComponent(currentUser.discord)}`);
+                const response = await fetch(`${API_URL}/reports`);
                 const data = await response.json();
                 
                 if (data.success) {
@@ -511,10 +508,10 @@
                     
                     ${report.status === 'pending' ? `
                         <div class="flex gap-3 mt-4">
-                            <button onclick="openApproveModal(${report.id})" class="btn btn-primary flex-1">
+                            <button onclick="openApproveModal('${report.id}')" class="btn btn-primary flex-1">
                                 <i class="fas fa-check mr-2"></i>Одобрить
                             </button>
-                            <button onclick="openRejectModal(${report.id})" class="btn btn-danger flex-1">
+                            <button onclick="openRejectModal('${report.id}')" class="btn btn-danger flex-1">
                                 <i class="fas fa-times mr-2"></i>Отклонить
                             </button>
                         </div>
@@ -573,6 +570,7 @@
                     },
                     body: JSON.stringify({
                         reviewer: currentUser.discord,
+                        reviewer_position: currentUser.position,
                         comment
                     })
                 });
@@ -608,6 +606,7 @@
                     },
                     body: JSON.stringify({
                         reviewer: currentUser.discord,
+                        reviewer_position: currentUser.position,
                         comment
                     })
                 });
