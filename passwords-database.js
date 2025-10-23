@@ -1,32 +1,13 @@
-require('dotenv').config();
-const { google } = require('googleapis');
+const { createClient } = require('@supabase/supabase-js');
 const crypto = require('crypto');
+
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_KEY;
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 class PasswordsDatabase {
   constructor() {
-    this.sheets = null;
-    this.spreadsheetId = process.env.GOOGLE_SHEET_ID;
-    this.initialized = false;
-    this.sheetName = 'Пароли';
-  }
-
-  async initialize() {
-    if (this.initialized) return;
-
-    try {
-      const credentials = JSON.parse(process.env.GOOGLE_CREDENTIALS);
-      const auth = new google.auth.GoogleAuth({
-        credentials,
-        scopes: ['https://www.googleapis.com/auth/spreadsheets'],
-      });
-
-      this.sheets = google.sheets({ version: 'v4', auth });
-      this.initialized = true;
-      console.log('✅ Google Sheets API для паролей инициализирован');
-    } catch (error) {
-      console.error('❌ Ошибка инициализации:', error.message);
-      throw error;
-    }
+    this.tableName = 'passwords';
   }
 
   // Хеширование пароля
@@ -36,73 +17,75 @@ class PasswordsDatabase {
 
   // Добавить пользователя с паролем
   async addUser(discord, password, question, answer) {
-    if (!this.initialized) {
-      await this.initialize();
-    }
-
     try {
+      console.log(`📝 Добавление пользователя ${discord}...`);
+      
       const hashedPassword = this.hashPassword(password);
       const hashedAnswer = this.hashPassword(answer.toLowerCase());
-      const today = new Date().toLocaleString('ru-RU');
       
-      await this.sheets.spreadsheets.values.append({
-        spreadsheetId: this.spreadsheetId,
-        range: `${this.sheetName}!A:E`,
-        valueInputOption: 'USER_ENTERED',
-        resource: {
-          values: [[discord, hashedPassword, question, hashedAnswer, today]]
-        }
-      });
+      const { data, error } = await supabase
+        .from(this.tableName)
+        .insert([{
+          discord: discord,
+          password: hashedPassword,
+          question: question,
+          answer: hashedAnswer
+        }])
+        .select()
+        .single();
 
-      console.log(`✅ Пользователь ${discord} добавлен`);
+      if (error) throw error;
+
+      console.log(`✅ Пользователь ${discord} успешно добавлен`);
       return true;
     } catch (error) {
-      console.error('Ошибка добавления пользователя:', error.message);
-      return false;
+      console.error('❌ Ошибка добавления пользователя:', error.message);
+      throw error;
     }
   }
 
   // Проверить пароль
   async verifyPassword(discord, password) {
-    if (!this.initialized) {
-      await this.initialize();
-    }
-
     try {
-      const response = await this.sheets.spreadsheets.values.get({
-        spreadsheetId: this.spreadsheetId,
-        range: `${this.sheetName}!A:B`,
-      });
+      const { data, error } = await supabase
+        .from(this.tableName)
+        .select('*')
+        .eq('discord', discord)
+        .single();
 
-      const rows = response.data.values || [];
-      const userRow = rows.find(row => row[0] && row[0].toLowerCase() === discord.toLowerCase());
-      
-      if (!userRow) return false;
-      
+      if (error || !data) {
+        return { success: false, message: 'Пользователь не найден' };
+      }
+
       const hashedPassword = this.hashPassword(password);
-      return userRow[1] === hashedPassword;
+      if (data.password === hashedPassword) {
+        return { 
+          success: true, 
+          question: data.question
+        };
+      }
+
+      return { success: false, message: 'Неверный пароль' };
     } catch (error) {
       console.error('Ошибка проверки пароля:', error.message);
-      return false;
+      return { success: false, message: 'Ошибка сервера' };
     }
   }
 
   // Получить секретный вопрос
   async getSecurityQuestion(discord) {
-    if (!this.initialized) {
-      await this.initialize();
-    }
-
     try {
-      const response = await this.sheets.spreadsheets.values.get({
-        spreadsheetId: this.spreadsheetId,
-        range: `${this.sheetName}!A:C`,
-      });
+      const { data, error } = await supabase
+        .from(this.tableName)
+        .select('question')
+        .eq('discord', discord)
+        .single();
 
-      const rows = response.data.values || [];
-      const userRow = rows.find(row => row[0] && row[0].toLowerCase() === discord.toLowerCase());
-      
-      return userRow ? userRow[2] : null;
+      if (error || !data) {
+        return null;
+      }
+
+      return data.question;
     } catch (error) {
       console.error('Ошибка получения вопроса:', error.message);
       return null;
@@ -110,47 +93,44 @@ class PasswordsDatabase {
   }
 
   // Проверить ответ на секретный вопрос
-  async verifySecurityAnswer(discord, answer) {
-    if (!this.initialized) {
-      await this.initialize();
-    }
-
+  async verifyAnswer(discord, answer) {
     try {
-      const response = await this.sheets.spreadsheets.values.get({
-        spreadsheetId: this.spreadsheetId,
-        range: `${this.sheetName}!A:D`,
-      });
+      const { data, error } = await supabase
+        .from(this.tableName)
+        .select('answer')
+        .eq('discord', discord)
+        .single();
 
-      const rows = response.data.values || [];
-      const userRow = rows.find(row => row[0] && row[0].toLowerCase() === discord.toLowerCase());
-      
-      if (!userRow) return false;
-      
+      if (error || !data) {
+        return { success: false, message: 'Пользователь не найден' };
+      }
+
       const hashedAnswer = this.hashPassword(answer.toLowerCase());
-      return userRow[3] === hashedAnswer;
+      if (data.answer === hashedAnswer) {
+        return { success: true };
+      }
+
+      return { success: false, message: 'Неверный ответ' };
     } catch (error) {
       console.error('Ошибка проверки ответа:', error.message);
-      return false;
+      return { success: false, message: 'Ошибка сервера' };
     }
   }
 
-  // Получить всех пользователей (только для админа)
+  // Получить всех пользователей
   async getAllUsers() {
-    if (!this.initialized) {
-      await this.initialize();
-    }
-
     try {
-      const response = await this.sheets.spreadsheets.values.get({
-        spreadsheetId: this.spreadsheetId,
-        range: `${this.sheetName}!A2:E`,
-      });
+      const { data, error } = await supabase
+        .from(this.tableName)
+        .select('discord, question, created_at')
+        .order('created_at', { ascending: false });
 
-      const rows = response.data.values || [];
-      return rows.map(row => ({
-        discord: row[0] || '',
-        question: row[2] || '',
-        createdAt: row[4] || ''
+      if (error) throw error;
+
+      return data.map(row => ({
+        discord: row.discord,
+        question: row.question,
+        createdAt: row.created_at
       }));
     } catch (error) {
       console.error('Ошибка получения пользователей:', error.message);
@@ -158,48 +138,35 @@ class PasswordsDatabase {
     }
   }
 
+  // Обновить пароль
+  async updatePassword(discord, newPassword) {
+    try {
+      const hashedPassword = this.hashPassword(newPassword);
+      
+      const { error } = await supabase
+        .from(this.tableName)
+        .update({ password: hashedPassword })
+        .eq('discord', discord);
+
+      if (error) throw error;
+
+      console.log(`✅ Пароль для ${discord} обновлен`);
+      return true;
+    } catch (error) {
+      console.error('Ошибка обновления пароля:', error.message);
+      return false;
+    }
+  }
+
   // Удалить пользователя
   async deleteUser(discord) {
-    if (!this.initialized) {
-      await this.initialize();
-    }
-
     try {
-      const response = await this.sheets.spreadsheets.values.get({
-        spreadsheetId: this.spreadsheetId,
-        range: `${this.sheetName}!A:A`,
-      });
+      const { error } = await supabase
+        .from(this.tableName)
+        .delete()
+        .eq('discord', discord);
 
-      const rows = response.data.values || [];
-      const rowIndex = rows.findIndex(row => 
-        row[0] && row[0].toLowerCase() === discord.toLowerCase()
-      );
-
-      if (rowIndex === -1) return false;
-
-      // Получаем sheetId
-      const sheetsResponse = await this.sheets.spreadsheets.get({
-        spreadsheetId: this.spreadsheetId
-      });
-      const sheet = sheetsResponse.data.sheets.find(s => s.properties.title === this.sheetName);
-      const sheetId = sheet.properties.sheetId;
-
-      // Удаляем строку
-      await this.sheets.spreadsheets.batchUpdate({
-        spreadsheetId: this.spreadsheetId,
-        resource: {
-          requests: [{
-            deleteDimension: {
-              range: {
-                sheetId: sheetId,
-                dimension: 'ROWS',
-                startIndex: rowIndex,
-                endIndex: rowIndex + 1
-              }
-            }
-          }]
-        }
-      });
+      if (error) throw error;
 
       console.log(`✅ Пользователь ${discord} удален`);
       return true;

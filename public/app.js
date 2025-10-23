@@ -713,13 +713,26 @@ function closeSolarikiModal() {
     currentSolarikiDiscord = '';
 }
 
+let isSubmittingSolariki = false;
+
 async function submitAddSolariki() {
+    if (isSubmittingSolariki) {
+        showToast('Ожидайте, запрос уже выполняется...', 'info');
+        return;
+    }
+    
     const amount = parseInt(document.getElementById('solarikiAmount').value);
     
     if (!amount || amount < 1) {
         showToast('Укажите корректное количество соляриков!', 'error');
         return;
     }
+    
+    isSubmittingSolariki = true;
+    const submitBtn = event.target;
+    const originalText = submitBtn.innerHTML;
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Отправка...';
     
     try {
         const response = await fetch(`${API_URL}/staff/${encodeURIComponent(currentSolarikiDiscord)}/solariki/add`, {
@@ -743,16 +756,31 @@ async function submitAddSolariki() {
         }
     } catch (error) {
         showToast('Ошибка подключения к серверу', 'error');
+    } finally {
+        isSubmittingSolariki = false;
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalText;
     }
 }
 
 async function submitRemoveSolariki() {
+    if (isSubmittingSolariki) {
+        showToast('Ожидайте, запрос уже выполняется...', 'info');
+        return;
+    }
+    
     const amount = parseInt(document.getElementById('solarikiAmount').value);
     
     if (!amount || amount < 1) {
         showToast('Укажите корректное количество соляриков!', 'error');
         return;
     }
+    
+    isSubmittingSolariki = true;
+    const submitBtn = event.target;
+    const originalText = submitBtn.innerHTML;
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Отправка...';
     
     try {
         const response = await fetch(`${API_URL}/staff/${encodeURIComponent(currentSolarikiDiscord)}/solariki/remove`, {
@@ -776,6 +804,10 @@ async function submitRemoveSolariki() {
         }
     } catch (error) {
         showToast('Ошибка подключения к серверу', 'error');
+    } finally {
+        isSubmittingSolariki = false;
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalText;
     }
 }
 

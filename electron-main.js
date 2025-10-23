@@ -3,14 +3,48 @@ const { autoUpdater } = require('electron-updater');
 const path = require('path');
 const fs = require('fs');
 
-// Настройка автообновлений
-autoUpdater.autoDownload = false; // Не скачиваем автоматически
-autoUpdater.autoInstallOnAppQuit = true; // Устанавливаем при выходе
+// ВАЖНО: Загружаем .env ПЕРВЫМ ДЕЛОМ
+// В dev режиме загружаем из корня проекта
+if (!app.isPackaged) {
+  require('dotenv').config({ path: path.join(__dirname, '.env') });
+  console.log('[ENV] .env loaded from:', path.join(__dirname, '.env'));
+}
+
+// Auto-update configuration
+autoUpdater.autoDownload = false; // Don't download automatically
+autoUpdater.autoInstallOnAppQuit = true; // Install on app quit
+
+// GitHub token for private repositories
+if (process.env.GH_TOKEN) {
+  autoUpdater.setFeedURL({
+    provider: 'github',
+    owner: 'm1ruk0',
+    repo: 'solarbox-staff-panel',
+    private: true,
+    token: process.env.GH_TOKEN
+  });
+  console.log('[GITHUB] Private repository access configured');
+} else {
+  console.log('[WARN] GH_TOKEN not found - private repo access may fail');
+}
+
+// Force dev update config for testing
+if (process.env.FORCE_UPDATE_CHECK === 'true') {
+  autoUpdater.forceDevUpdateConfig = true;
+  console.log('[DEV-UPDATE] Force dev update config enabled');
+  
+  // Отключаем проверку подписи для тестирования
+  process.env.ELECTRON_BUILDER_ALLOW_UNRESOLVED_DEPENDENCIES = 'true';
+  
+  // Обработчик для пропуска проверки подписи
+  autoUpdater.on('update-downloaded', (info) => {
+    console.log('[UPDATE] Downloaded successfully (signature check skipped for testing)');
+  });
+}
 
 let updateWindow = null;
 
-// ВАЖНО: Загружаем .env ПЕРЕД запуском API сервера
-// В production (собранном приложении) ищем .env в разных местах
+// Загрузка .env для production
 let envPath;
 let envLoaded = false;
 
@@ -80,9 +114,11 @@ function createWindow() {
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
-      enableRemoteModule: false
+      enableRemoteModule: false,
+      devTools: !app.isPackaged // DevTools только в dev режиме
     },
-    autoHideMenuBar: true, // Скрыть меню
+    autoHideMenuBar: true,
+    frame: true,
     title: 'SolarBox - Панель управления персоналом'
   });
 
@@ -123,6 +159,31 @@ function createWindow() {
   // DevTools только в режиме разработки
   if (!app.isPackaged) {
     mainWindow.webContents.openDevTools();
+  }
+
+  // Блокировка DevTools в production
+  if (app.isPackaged) {
+    mainWindow.webContents.on('devtools-opened', () => {
+      mainWindow.webContents.closeDevTools();
+    });
+
+    // Блокировка контекстного меню
+    mainWindow.webContents.on('context-menu', (e) => {
+      e.preventDefault();
+    });
+
+    // Блокировка горячих клавиш DevTools
+    mainWindow.webContents.on('before-input-event', (event, input) => {
+      if (input.control && input.shift && input.key.toLowerCase() === 'i') {
+        event.preventDefault();
+      }
+      if (input.control && input.shift && input.key.toLowerCase() === 'j') {
+        event.preventDefault();
+      }
+      if (input.key === 'F12') {
+        event.preventDefault();
+      }
+    });
   }
 
   mainWindow.on('closed', function () {
@@ -191,22 +252,22 @@ ipcMain.on('close-update-window', () => {
   }
 });
 
-// Обработчики событий автообновления
+// Auto-update event handlers
 autoUpdater.on('checking-for-update', () => {
-  console.log('🔍 Проверка обновлений...');
+  console.log('[UPDATE] Checking for updates...');
 });
 
 autoUpdater.on('update-available', (info) => {
-  console.log('✅ Доступно обновление:', info.version);
+  console.log('[UPDATE] Update available:', info.version);
   createUpdateWindow(info);
 });
 
 autoUpdater.on('update-not-available', () => {
-  console.log('✅ Обновлений нет, у вас последняя версия');
+  console.log('[UPDATE] No updates available, you have the latest version');
 });
 
 autoUpdater.on('download-progress', (progressObj) => {
-  console.log('📥 Загрузка:', progressObj.percent.toFixed(2) + '%');
+  console.log('[DOWNLOAD] Progress:', progressObj.percent.toFixed(2) + '%');
   
   if (mainWindow) {
     mainWindow.setProgressBar(progressObj.percent / 100);
@@ -218,7 +279,7 @@ autoUpdater.on('download-progress', (progressObj) => {
 });
 
 autoUpdater.on('update-downloaded', () => {
-  console.log('✅ Обновление загружено');
+  console.log('[UPDATE] Update downloaded');
   
   if (mainWindow) {
     mainWindow.setProgressBar(-1);
@@ -230,7 +291,7 @@ autoUpdater.on('update-downloaded', () => {
 });
 
 autoUpdater.on('error', (error) => {
-  console.error('❌ Ошибка обновления:', error);
+  console.error('[ERROR] Update error:', error);
   
   if (updateWindow) {
     updateWindow.webContents.send('update-error', error);
@@ -240,11 +301,34 @@ autoUpdater.on('error', (error) => {
 app.whenReady().then(() => {
   createWindow();
   
-  // Проверяем обновления через 3 секунды после запуска
-  if (app.isPackaged) {
+  console.log('[MODE] Application mode:', app.isPackaged ? 'PRODUCTION (packaged)' : 'DEVELOPMENT (dev)');
+  console.log('[VERSION] Application version:', app.getVersion());
+  
+  // Check environment variable for dev mode testing
+  const forceUpdateCheck = process.env.FORCE_UPDATE_CHECK === 'true';
+  
+  // Check for updates 3 seconds after startup
+  if (app.isPackaged || forceUpdateCheck) {
+    console.log('[AUTO-UPDATE] Enabled');
+    if (forceUpdateCheck) {
+      console.log('[TEST MODE] Checking updates in dev mode');
+    }
     setTimeout(() => {
-      autoUpdater.checkForUpdates();
+      console.log('[UPDATE] Starting update check...');
+      console.log('[REPO] GitHub Repo: m1ruk0/solarbox-staff-panel');
+      console.log('[VERSION] Current version:', app.getVersion());
+      autoUpdater.checkForUpdates()
+        .then(result => {
+          console.log('[RESULT] Check result:', result);
+        })
+        .catch(error => {
+          console.error('[ERROR] Check failed:', error.message);
+        });
     }, 3000);
+  } else {
+    console.log('[AUTO-UPDATE] Disabled (development mode)');
+    console.log('[INFO] To test, build the app: npm run build');
+    console.log('[INFO] Or run with FORCE_UPDATE_CHECK=true for dev mode test');
   }
 
   app.on('activate', function () {

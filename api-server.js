@@ -436,6 +436,15 @@ app.post('/api/admin/passwords/add', async (req, res) => {
   try {
     const { discord, password, question, answer } = req.body;
     
+    console.log('📝 Попытка добавить пользователя:', discord);
+    
+    if (!discord || !password || !question || !answer) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Все поля обязательны для заполнения' 
+      });
+    }
+    
     const success = await passwordsDB.addUser(discord, password, question, answer);
     
     if (success) {
@@ -444,6 +453,7 @@ app.post('/api/admin/passwords/add', async (req, res) => {
       res.status(500).json({ success: false, error: 'Не удалось добавить пользователя' });
     }
   } catch (error) {
+    console.error('❌ Ошибка добавления пользователя:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 });

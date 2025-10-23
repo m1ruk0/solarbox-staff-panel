@@ -37,8 +37,15 @@ async function loadBalance() {
 }
 
 // Передача соляриков
+let isTransferring = false;
+
 async function transferSolariki(event) {
     event.preventDefault();
+    
+    if (isTransferring) {
+        showToast('Ожидайте, запрос уже выполняется...', 'info');
+        return;
+    }
     
     const recipient = document.getElementById('recipientDiscord').value.trim();
     const amount = parseInt(document.getElementById('amount').value);
@@ -59,6 +66,12 @@ async function transferSolariki(event) {
         showToast('Недостаточно соляриков!', 'error');
         return;
     }
+    
+    isTransferring = true;
+    const submitBtn = event.target.querySelector('button[type="submit"]') || event.submitter;
+    const originalText = submitBtn.innerHTML;
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Отправка...';
     
     try {
         // Передаем солярики через новый endpoint
@@ -85,6 +98,10 @@ async function transferSolariki(event) {
     } catch (error) {
         showToast('Ошибка подключения к серверу', 'error');
         console.error(error);
+    } finally {
+        isTransferring = false;
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalText;
     }
 }
 

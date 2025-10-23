@@ -51,7 +51,6 @@ function createSidebar() {
     
     const sidebarHTML = `
         <div class="sidebar" id="sidebar">
-            
             <nav class="sidebar-nav">
                 <div class="sidebar-section">
                     <div class="sidebar-section-title">Главное</div>
@@ -127,11 +126,20 @@ function createSidebar() {
         </button>
     `;
     
-    document.body.insertAdjacentHTML('afterbegin', sidebarHTML);
+    // Проверяем, есть ли уже sidebar на странице
+    const existingSidebar = document.getElementById('sidebar');
     
-    // Оборачиваем контент в main-content
-    const existingContent = document.body.innerHTML;
-    document.body.innerHTML = sidebarHTML + '<div class="main-content">' + existingContent.replace(sidebarHTML, '') + '</div>';
+    if (existingSidebar) {
+        // Если sidebar уже есть (страницы отчетов), заполняем его
+        existingSidebar.outerHTML = sidebarHTML;
+    } else {
+        // Если sidebar нет (обычные страницы), создаем его
+        document.body.insertAdjacentHTML('afterbegin', sidebarHTML);
+        
+        // Оборачиваем контент в main-content
+        const existingContent = document.body.innerHTML;
+        document.body.innerHTML = sidebarHTML + '<div class="main-content">' + existingContent.replace(sidebarHTML, '') + '</div>';
+    }
     
     // Проверяем права для админ секции
     checkAdminRights();

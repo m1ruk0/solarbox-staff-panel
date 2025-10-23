@@ -7,7 +7,7 @@ const applicationsDB = require('./applications-database-supabase'); // Supabase 
 const passwordsDB = require('./passwords-database-supabase');
 const logsDB = require('./logs-database-supabase');
 const bugsDB = require('./bugs-database-supabase');
-const reportsDB = require('./reports-database');
+const reportsDB = require('./reports-database-supabase');
 const { hasPermission, canPromoteTo, getAvailablePositions, canManageStaffMember } = require('./roles');
 
 // Discord бот (опционально)
@@ -19,14 +19,14 @@ if (process.env.DISCORD_TOKEN && process.env.DISCORD_TOKEN !== 'ваш_токе�
     try {
       const discordBot = require('./index');
       sendApplicationAcceptedDM = discordBot.sendApplicationAcceptedDM;
-      console.log('✅ Discord бот подключен для отправки уведомлений');
+      console.log('[OK] Discord bot connected for notifications');
     } catch (error) {
-      console.log('⚠️ Discord бот не подключен:', error.message);
+      console.log('[WARN] Discord bot not connected:', error.message);
     }
   }, 3000);
 } else {
-  console.log('ℹ️  Discord бот отключен (токен не настроен)');
-  console.log('   API сервер работает без Discord уведомлений');
+  console.log('[INFO] Discord bot disabled (token not configured)');
+  console.log('       API server running without Discord notifications');
 }
 
 const app = express();
@@ -660,9 +660,9 @@ app.post('/api/applications/:id/approve', async (req, res) => {
       if (sendApplicationAcceptedDM && application.discord) {
         try {
           await sendApplicationAcceptedDM(application.discord, position, comment);
-          console.log(`✅ Уведомление отправлено пользователю ${application.discord}`);
+          console.log(`[OK] Notification sent to user ${application.discord}`);
         } catch (error) {
-          console.error('❌ Ошибка отправки уведомления:', error.message);
+          console.error('[ERROR] Failed to send notification:', error.message);
         }
       }
       
@@ -867,13 +867,131 @@ app.delete('/api/bugs/:id', async (req, res) => {
   }
 });
 
+// ============================================
+// ОТЧЕТЫ (REPORTS)
+// ============================================
+
+// Создать отчет
+app.post('/api/reports', async (req, res) => {
+  try {
+    const { author, reportCount, screenshots } = req.body;
+    
+    if (!author) {
+      return res.status(400).json({ success: false, error: 'Не указан автор отчета' });
+    }
+    
+    const report = await reportsDB.createReport({
+      author,
+      reportCount: reportCount || 1,
+      screenshots: screenshots || []
+    });
+    
+    res.json({ success: true, data: report });
+  } catch (error) {
+    console.error('Error creating report:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Получить все отчеты
+app.get('/api/reports', async (req, res) => {
+  try {
+    const reports = await reportsDB.getAllReports();
+    res.json({ success: true, data: reports });
+  } catch (error) {
+    console.error('Error getting reports:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Получить отчеты по автору
+app.get('/api/reports/my', async (req, res) => {
+  try {
+    const { author } = req.query;
+    
+    if (!author) {
+      return res.status(400).json({ success: false, error: 'Не указан автор' });
+    }
+    
+    const reports = await reportsDB.getReportsByAuthor(author);
+    res.json({ success: true, data: reports });
+  } catch (error) {
+    console.error('Error getting reports by author:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Получить отчет по ID
+app.get('/api/reports/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const report = await reportsDB.getReportById(id);
+    
+    if (!report) {
+      return res.status(404).json({ success: false, error: 'Отчет не найден' });
+    }
+    
+    res.json({ success: true, data: report });
+  } catch (error) {
+    console.error('Error getting report:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Одобрить отчет
+app.post('/api/reports/:id/approve', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { reviewer, comment } = req.body;
+    
+    if (!reviewer) {
+      return res.status(400).json({ success: false, error: 'Не указан проверяющий' });
+    }
+    
+    const report = await reportsDB.approveReport(id, reviewer, comment || '');
+    res.json({ success: true, data: report });
+  } catch (error) {
+    console.error('Error approving report:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Отклонить отчет
+app.post('/api/reports/:id/reject', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { reviewer, comment } = req.body;
+    
+    if (!reviewer) {
+      return res.status(400).json({ success: false, error: 'Не указан проверяющий' });
+    }
+    
+    const report = await reportsDB.rejectReport(id, reviewer, comment || '');
+    res.json({ success: true, data: report });
+  } catch (error) {
+    console.error('Error rejecting report:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Получить статистику отчетов
+app.get('/api/reports/stats', async (req, res) => {
+  try {
+    const stats = await reportsDB.getStats();
+    res.json({ success: true, data: stats });
+  } catch (error) {
+    console.error('Error getting stats:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // Запуск сервера
 const PORT = process.env.API_PORT || 4000;
 
 app.listen(PORT, () => {
-  console.log(`🚀 API сервер запущен на порту ${PORT}`);
-  console.log(`📡 API доступен по адресу: http://localhost:${PORT}/api`);
-  console.log(`🔒 База данных: Supabase (PostgreSQL)`);
+  console.log(`[START] API server started on port ${PORT}`);
+  console.log(`[API] Available at: http://localhost:${PORT}/api`);
+  console.log(`[DB] Database: Supabase (PostgreSQL)`);
 });
 
 module.exports = app;

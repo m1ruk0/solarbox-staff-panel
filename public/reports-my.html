@@ -13,48 +13,6 @@
         body {
             margin-left: 70px !important;
         }
-        
-        #pageLoader {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            z-index: 99999;
-            transition: opacity 0.3s ease;
-        }
-        
-        .loader-spinner {
-            width: 50px;
-            height: 50px;
-            margin: 0 auto 2rem;
-            border-radius: 50%;
-            border: 4px solid transparent;
-            border-top-color: #764ba2;
-            border-right-color: #764ba2;
-            animation: spin 0.8s linear infinite;
-        }
-        
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-        
-        .loader-text {
-            color: white;
-            font-size: 1.2rem;
-            font-weight: 600;
-            animation: pulse 1.5s ease-in-out infinite;
-        }
-        
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
-        }
 
         .report-card {
             background: rgba(255, 255, 255, 0.05);
@@ -146,11 +104,6 @@
     <link rel="stylesheet" href="sidebar.css">
 </head>
 <body class="dark-theme">
-    <!-- Loader -->
-    <div id="pageLoader">
-        <div class="loader-spinner"></div>
-        <div class="loader-text">Загрузка...</div>
-    </div>
 
     <!-- Sidebar -->
     <div class="sidebar" id="sidebar"></div>
@@ -175,26 +128,6 @@
         </div>
     </div>
 
-    <!-- Поиск -->
-    <div class="glass-card mb-6">
-        <div class="flex gap-4">
-            <div class="flex-1">
-                <label class="block text-sm font-medium text-gray-700 mb-2">
-                    <i class="fab fa-discord mr-2"></i>Ваш Discord ник
-                </label>
-                <input type="text" id="authorInput"
-                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                    placeholder="Введите ваш Discord ник">
-            </div>
-            <div class="flex items-end">
-                <button onclick="loadMyReports()" class="btn btn-primary">
-                    <i class="fas fa-search mr-2"></i>
-                    Найти мои отчеты
-                </button>
-            </div>
-        </div>
-    </div>
-
     <!-- Список отчетов -->
     <div id="reportsContainer"></div>
 
@@ -205,18 +138,19 @@
             ? 'http://localhost:4000/api' 
             : window.location.origin + '/api';
 
-        // Загрузка страницы
-        document.addEventListener('DOMContentLoaded', () => {
-            hideLoader();
-        });
+        let currentUser = null;
 
-        function hideLoader() {
-            const loader = document.getElementById('pageLoader');
-            if (loader) {
-                loader.style.opacity = '0';
-                setTimeout(() => loader.style.display = 'none', 300);
+        // Загрузка страницы
+        document.addEventListener('DOMContentLoaded', async () => {
+            const user = JSON.parse(localStorage.getItem('user') || '{}');
+            if (!user.discord) {
+                showToast('Пожалуйста, войдите в систему', 'error');
+                setTimeout(() => window.location.href = 'login.html', 2000);
+                return;
             }
-        }
+            currentUser = user;
+            await loadMyReports();
+        });
 
         function showToast(message, type = 'success') {
             const container = document.getElementById('toastContainer');
@@ -286,12 +220,12 @@
         }
 
         async function loadMyReports() {
-            const author = document.getElementById('authorInput').value.trim();
-            
-            if (!author) {
-                showToast('Введите ваш Discord ник', 'error');
+            if (!currentUser || !currentUser.discord) {
+                showToast('Пользователь не найден', 'error');
                 return;
             }
+            
+            const author = currentUser.discord;
             
             try {
                 const response = await fetch(`${API_URL}/reports/my?author=${encodeURIComponent(author)}`);
@@ -357,13 +291,14 @@
                     ${report.screenshots && report.screenshots.length > 0 ? `
                         <div class="mb-4">
                             <p class="text-sm font-medium text-gray-400 mb-2">
-                                <i class="fas fa-images mr-2"></i>Скриншоты:
+                                <i class="fas fa-images mr-2"></i>Скриншоты (${report.screenshots.length}):
                             </p>
                             <div class="screenshot-grid">
-                                ${report.screenshots.map(url => `
-                                    <img src="${url}" class="screenshot-thumb" 
-                                        onclick="window.open('${url}', '_blank')"
-                                        onerror="this.src='https://via.placeholder.com/120?text=Ошибка'">
+                                ${report.screenshots.map((screenshot, idx) => `
+                                    <img src="${screenshot}" class="screenshot-thumb" 
+                                        onclick="openImageModal(this.src)"
+                                        style="cursor: pointer;"
+                                        alt="Скриншот ${idx + 1}">
                                 `).join('')}
                             </div>
                         </div>
@@ -394,12 +329,19 @@
             `).join('');
         }
 
-        // Enter для поиска
-        document.getElementById('authorInput').addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                loadMyReports();
-            }
-        });
+        // Открытие изображения в полном размере
+        function openImageModal(src) {
+            const modal = document.createElement('div');
+            modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 10000; display: flex; align-items: center; justify-content: center; cursor: pointer;';
+            
+            const img = document.createElement('img');
+            img.src = src;
+            img.style.cssText = 'max-width: 90%; max-height: 90%; border-radius: 8px;';
+            
+            modal.appendChild(img);
+            modal.onclick = () => modal.remove();
+            document.body.appendChild(modal);
+        }
     </script>
 </body>
 </html>
