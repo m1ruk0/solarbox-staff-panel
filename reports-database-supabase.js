@@ -18,7 +18,10 @@ class ReportsDatabase {
         .from('reports')
         .insert([{
           author: reportData.author,
-          report_count: reportData.reportCount || 1,
+          report_type: reportData.report_type || 'daily_report',
+          player_nickname: reportData.player_nickname || '',
+          reason: reportData.reason || '',
+          description: reportData.description || '',
           screenshots: reportData.screenshots || [],
           status: 'pending'
         }])

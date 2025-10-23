@@ -874,7 +874,7 @@ app.delete('/api/bugs/:id', async (req, res) => {
 // Создать отчет
 app.post('/api/reports', async (req, res) => {
   try {
-    const { author, reportCount, screenshots } = req.body;
+    const { author, report_type, player_nickname, reason, description, screenshots } = req.body;
     
     if (!author) {
       return res.status(400).json({ success: false, error: 'Не указан автор отчета' });
@@ -882,7 +882,10 @@ app.post('/api/reports', async (req, res) => {
     
     const report = await reportsDB.createReport({
       author,
-      reportCount: reportCount || 1,
+      report_type: report_type || 'daily_report',
+      player_nickname: player_nickname || '',
+      reason: reason || '',
+      description: description || '',
       screenshots: screenshots || []
     });
     

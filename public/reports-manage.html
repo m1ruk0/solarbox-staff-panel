@@ -284,16 +284,16 @@
     <!-- Фильтры -->
     <div class="glass-card mb-6">
         <div class="filter-tabs">
-            <div class="filter-tab active" onclick="filterReports('all', event)">
+            <div class="filter-tab active" onclick="filterReports('all', this)">
                 <i class="fas fa-list mr-2"></i>Все
             </div>
-            <div class="filter-tab" onclick="filterReports('pending', event)">
+            <div class="filter-tab" onclick="filterReports('pending', this)">
                 <i class="fas fa-clock mr-2"></i>На рассмотрении
             </div>
-            <div class="filter-tab" onclick="filterReports('approved', event)">
+            <div class="filter-tab" onclick="filterReports('approved', this)">
                 <i class="fas fa-check-circle mr-2"></i>Одобренные
             </div>
-            <div class="filter-tab" onclick="filterReports('rejected', event)">
+            <div class="filter-tab" onclick="filterReports('rejected', this)">
                 <i class="fas fa-times-circle mr-2"></i>Отклоненные
             </div>
         </div>
@@ -379,7 +379,7 @@
             document.getElementById('rejectedReports').textContent = allReports.filter(r => r.status === 'rejected').length;
         }
 
-        function filterReports(filter, event) {
+        function filterReports(filter, element) {
             currentFilter = filter;
             
             // Обновляем активную вкладку
@@ -387,8 +387,8 @@
                 tab.classList.remove('active');
             });
             
-            if (event) {
-                event.currentTarget.classList.add('active');
+            if (element) {
+                element.classList.add('active');
             }
             
             displayReports();

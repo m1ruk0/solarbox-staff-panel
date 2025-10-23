@@ -257,11 +257,11 @@
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
-                        author,
-                        reportType: 'report',
-                        playerNickname: `${reportCount} отчет(ов)`,
-                        reason: `Количество: ${reportCount}`,
-                        description,
+                        author: author,
+                        report_type: 'daily_report',
+                        player_nickname: `${reportCount} отчет(ов)`,
+                        reason: 'Ежедневный отчет',
+                        description: `Количество отчетов: ${reportCount}`,
                         screenshots: screenshots.map(s => s.data)
                     })
                 });
