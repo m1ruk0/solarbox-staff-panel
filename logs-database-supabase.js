@@ -1,7 +1,6 @@
 const supabase = require('./supabase-setup');
 
 class LogsDatabase {
-  // Добавить лог
   async addLog(action, moderator, target = null, details = null) {
     try {
       const { data, error } = await supabase
@@ -23,7 +22,6 @@ class LogsDatabase {
     }
   }
 
-  // Получить все логи
   async getAllLogs(limit = 100) {
     try {
       const { data, error } = await supabase

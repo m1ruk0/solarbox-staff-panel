@@ -1,6 +1,6 @@
 {
   "name": "solarbox-staff-panel",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "description": "SolarBox - Панель управления персоналом",
   "main": "electron-main.js",
   "scripts": {
@@ -24,7 +24,9 @@
       "target": [
         {
           "target": "nsis",
-          "arch": ["x64"]
+          "arch": [
+            "x64"
+          ]
         }
       ],
       "icon": "icon.ico",

@@ -6,12 +6,10 @@ class PasswordsDatabaseSupabase {
     this.tableName = 'passwords';
   }
 
-  // Хеширование
   hashPassword(password) {
     return crypto.createHash('sha256').update(password).digest('hex');
   }
 
-  // Добавить пользователя
   async addUser(discord, password, question, answer) {
     try {
       const hashedPassword = this.hashPassword(password);
@@ -43,7 +41,6 @@ class PasswordsDatabaseSupabase {
     }
   }
 
-  // Проверить пароль
   async verifyPassword(discord, password) {
     try {
       const { data, error } = await supabase
@@ -62,7 +59,6 @@ class PasswordsDatabaseSupabase {
     }
   }
 
-  // Получить секретный вопрос
   async getSecurityQuestion(discord) {
     try {
       const { data, error } = await supabase
@@ -80,7 +76,6 @@ class PasswordsDatabaseSupabase {
     }
   }
 
-  // Проверить ответ
   async verifySecurityAnswer(discord, answer) {
     try {
       const { data, error } = await supabase
@@ -99,7 +94,6 @@ class PasswordsDatabaseSupabase {
     }
   }
 
-  // Получить всех пользователей
   async getAllUsers() {
     try {
       const { data, error } = await supabase
@@ -120,7 +114,30 @@ class PasswordsDatabaseSupabase {
     }
   }
 
-  // Удалить пользователя
+  async updateUser(discord, password, question, answer) {
+    try {
+      const hashedPassword = this.hashPassword(password);
+      const hashedAnswer = this.hashPassword(answer.toLowerCase());
+
+      const { error } = await supabase
+        .from(this.tableName)
+        .update({
+          password: hashedPassword,
+          question,
+          answer: hashedAnswer
+        })
+        .ilike('discord', discord);
+
+      if (error) throw error;
+
+      console.log(`✅ Пароль и секретное слово для ${discord} обновлены`);
+      return true;
+    } catch (error) {
+      console.error('Ошибка обновления пользователя:', error);
+      return false;
+    }
+  }
+
   async deleteUser(discord) {
     try {
       const { error } = await supabase

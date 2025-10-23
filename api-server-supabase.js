@@ -741,6 +741,27 @@ app.post('/api/admin/passwords/add', async (req, res) => {
   }
 });
 
+// Обновить пароль и секретное слово
+app.put('/api/admin/passwords/update', async (req, res) => {
+  try {
+    const { discord, password, question, answer } = req.body;
+    
+    if (!discord || !password || !question || !answer) {
+      return res.status(400).json({ success: false, error: 'Не все поля заполнены' });
+    }
+    
+    const success = await passwordsDB.updateUser(discord, password, question, answer);
+    
+    if (success) {
+      res.json({ success: true, message: 'Пароль и секретное слово обновлены' });
+    } else {
+      res.status(404).json({ success: false, error: 'Пользователь не найден' });
+    }
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // Удалить пользователя
 app.delete('/api/admin/passwords/delete', async (req, res) => {
   try {
@@ -1002,8 +1023,8 @@ app.post('/api/withdrawals', async (req, res) => {
       return res.status(400).json({ success: false, error: 'Не все поля заполнены' });
     }
     
-    if (amount < 100) {
-      return res.status(400).json({ success: false, error: 'Минимальная сумма вывода: 100 соляриков' });
+    if (amount < 1) {
+      return res.status(400).json({ success: false, error: 'Укажите корректную сумму' });
     }
     
     // Проверяем баланс пользователя
@@ -1025,6 +1046,14 @@ app.post('/api/withdrawals', async (req, res) => {
       minecraft,
       amount
     });
+    
+    // Добавляем лог
+    await logsDB.addLog(
+      'Создана заявка на вывод',
+      discord,
+      discord,
+      `Сумма: ${amount} соляриков, Minecraft: ${minecraft}`
+    );
     
     res.json({ success: true, data: withdrawal });
   } catch (error) {
@@ -1072,6 +1101,15 @@ app.post('/api/withdrawals/:id/approve', async (req, res) => {
     }
     
     const withdrawal = await withdrawalsDB.approveWithdrawal(id, reviewer);
+    
+    // Добавляем лог
+    await logsDB.addLog(
+      'Заявка на вывод одобрена',
+      reviewer,
+      withdrawal.discord,
+      `Сумма: ${withdrawal.amount} соляриков, Minecraft: ${withdrawal.minecraft}`
+    );
+    
     res.json({ success: true, data: withdrawal });
   } catch (error) {
     console.error('Error approving withdrawal:', error);
@@ -1101,6 +1139,15 @@ app.post('/api/withdrawals/:id/reject', async (req, res) => {
     
     // Отклоняем заявку
     const rejectedWithdrawal = await withdrawalsDB.rejectWithdrawal(id, reviewer, comment);
+    
+    // Добавляем лог
+    await logsDB.addLog(
+      'Заявка на вывод отклонена',
+      reviewer,
+      withdrawal.discord,
+      `Сумма: ${withdrawal.amount} соляриков, Причина: ${comment}`
+    );
+    
     res.json({ success: true, data: rejectedWithdrawal });
   } catch (error) {
     console.error('Error rejecting withdrawal:', error);

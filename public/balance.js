@@ -109,7 +109,7 @@ async function transferSolariki(event) {
 async function loadHistory() {
     document.getElementById('loading').style.display = 'none';
     document.getElementById('historyList').innerHTML = `
-        <div class="text-center py-8 text-gray-500">
+        <div class="text-center py-8 text-gray-400">
             <i class="fas fa-info-circle text-4xl mb-3"></i>
             <p>История передач пока недоступна</p>
         </div>
@@ -121,25 +121,7 @@ function resetForm() {
     document.getElementById('transferForm').reset();
 }
 
-// Toast уведомления
-function showToast(message, type = 'info') {
-    const container = document.getElementById('toastContainer');
-    
-    const toast = document.createElement('div');
-    toast.className = `toast ${type}`;
-    toast.innerHTML = `
-        <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}"></i>
-        <span>${message}</span>
-    `;
-    
-    container.appendChild(toast);
-    
-    setTimeout(() => {
-        if (toast.parentElement) {
-            toast.remove();
-        }
-    }, 4000);
-}
+// showToast теперь используется из app.js
 
 // Инициализация
 loadBalance();

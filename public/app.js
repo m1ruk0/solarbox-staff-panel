@@ -127,9 +127,11 @@ function showToast(message, type = 'success') {
 // Загрузка данных при старте
 document.addEventListener('DOMContentLoaded', () => {
     if (checkAuth()) {
-        loadStaff();
-        loadStats();
-        updatePositionSelects();
+        if (document.getElementById('staffTable')) {
+            loadStaff();
+            loadStats();
+            updatePositionSelects();
+        }
     }
 });
 
@@ -182,15 +184,19 @@ async function loadStaff() {
         if (data.success) {
             allStaff = data.data;
             renderStaff(allStaff);
-            document.getElementById('loading').style.display = 'none';
+            const loading = document.getElementById('loading');
+            if (loading) loading.style.display = 'none';
         }
     } catch (error) {
         console.error('Ошибка загрузки:', error);
-        document.getElementById('loading').innerHTML = `
-            <i class="fas fa-exclamation-circle text-4xl text-red-600"></i>
-            <p class="text-red-600 mt-4">Ошибка подключения к серверу</p>
-            <p class="text-gray-600 text-sm mt-2">Убедитесь что API сервер запущен</p>
-        `;
+        const loading = document.getElementById('loading');
+        if (loading) {
+            loading.innerHTML = `
+                <i class="fas fa-exclamation-circle text-4xl text-red-600"></i>
+                <p class="text-red-600 mt-4">Ошибка подключения к серверу</p>
+                <p class="text-gray-600 text-sm mt-2">Убедитесь что API сервер запущен</p>
+            `;
+        }
     }
 }
 
@@ -201,10 +207,15 @@ async function loadStats() {
         const data = await response.json();
         
         if (data.success) {
-            document.getElementById('totalStaff').textContent = data.data.total;
-            document.getElementById('activeStaff').textContent = data.data.active;
-            document.getElementById('vacationStaff').textContent = data.data.vacation;
-            document.getElementById('warnedStaff').textContent = data.data.warned;
+            const totalStaff = document.getElementById('totalStaff');
+            const activeStaff = document.getElementById('activeStaff');
+            const vacationStaff = document.getElementById('vacationStaff');
+            const warnedStaff = document.getElementById('warnedStaff');
+            
+            if (totalStaff) totalStaff.textContent = data.data.total;
+            if (activeStaff) activeStaff.textContent = data.data.active;
+            if (vacationStaff) vacationStaff.textContent = data.data.vacation;
+            if (warnedStaff) warnedStaff.textContent = data.data.warned;
         }
     } catch (error) {
         console.error('Ошибка загрузки статистики:', error);

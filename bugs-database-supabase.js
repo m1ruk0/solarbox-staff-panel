@@ -5,7 +5,6 @@ class BugsDatabaseSupabase {
     this.tableName = 'bugs';
   }
 
-  // Получить все баги
   async getAllBugs() {
     try {
       const { data, error } = await supabase
@@ -22,7 +21,6 @@ class BugsDatabaseSupabase {
     }
   }
 
-  // Получить баги по статусу
   async getBugsByStatus(status) {
     try {
       const { data, error } = await supabase
@@ -40,7 +38,6 @@ class BugsDatabaseSupabase {
     }
   }
 
-  // Добавить баг
   async addBug(bugData) {
     try {
       const { data, error } = await supabase
@@ -67,7 +64,6 @@ class BugsDatabaseSupabase {
     }
   }
 
-  // Обновить статус бага
   async updateBugStatus(id, status, resolvedBy, adminComment) {
     try {
       const updateData = {
@@ -99,7 +95,6 @@ class BugsDatabaseSupabase {
     }
   }
 
-  // Обновить приоритет
   async updateBugPriority(id, priority) {
     try {
       const { error } = await supabase
@@ -120,7 +115,6 @@ class BugsDatabaseSupabase {
     }
   }
 
-  // Удалить баг
   async deleteBug(id) {
     try {
       const { error } = await supabase

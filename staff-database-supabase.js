@@ -5,7 +5,6 @@ class StaffDatabaseSupabase {
     this.tableName = 'staff';
   }
 
-  // Получить всех сотрудников
   async getAllStaff() {
     try {
       const { data, error } = await supabase
@@ -31,7 +30,6 @@ class StaffDatabaseSupabase {
     }
   }
 
-  // Добавить сотрудника
   async addStaff(discord, minecraft, position) {
     try {
       const { data, error } = await supabase
@@ -49,7 +47,7 @@ class StaffDatabaseSupabase {
         .select();
 
       if (error) {
-        if (error.code === '23505') { // Unique violation
+        if (error.code === '23505') {
           console.error('❌ Сотрудник уже существует');
           return false;
         }
@@ -64,7 +62,6 @@ class StaffDatabaseSupabase {
     }
   }
 
-  // Найти сотрудника по Discord
   async getStaffByDiscord(discord) {
     try {
       const { data, error } = await supabase
@@ -74,7 +71,7 @@ class StaffDatabaseSupabase {
         .single();
 
       if (error) {
-        if (error.code === 'PGRST116') return null; // Not found
+        if (error.code === 'PGRST116') return null;
         throw error;
       }
 
@@ -94,12 +91,10 @@ class StaffDatabaseSupabase {
     }
   }
 
-  // Алиас
   async findStaff(discord) {
     return await this.getStaffByDiscord(discord);
   }
 
-  // Обновить должность
   async updatePosition(discord, position) {
     try {
       const { error } = await supabase
@@ -117,7 +112,6 @@ class StaffDatabaseSupabase {
     }
   }
 
-  // Добавить варн
   async addWarn(discord, count = 1) {
     try {
       const staff = await this.getStaffByDiscord(discord);
@@ -140,7 +134,6 @@ class StaffDatabaseSupabase {
     }
   }
 
-  // Снять варн
   async removeWarn(discord, count = 1) {
     try {
       const staff = await this.getStaffByDiscord(discord);
@@ -163,7 +156,6 @@ class StaffDatabaseSupabase {
     }
   }
 
-  // Обновить статус
   async updateStatus(discord, status) {
     try {
       const { error } = await supabase
@@ -181,7 +173,6 @@ class StaffDatabaseSupabase {
     }
   }
 
-  // Установить отпуск
   async setVacation(discord, onVacation, days = 0) {
     try {
       const { error } = await supabase
@@ -202,7 +193,6 @@ class StaffDatabaseSupabase {
     }
   }
 
-  // Уволить сотрудника
   async deleteStaff(discord, reason) {
     try {
       const { error } = await supabase
@@ -224,7 +214,6 @@ class StaffDatabaseSupabase {
     }
   }
 
-  // Удалить навсегда
   async permanentDelete(discord, reason) {
     try {
       const { error } = await supabase
@@ -242,7 +231,6 @@ class StaffDatabaseSupabase {
     }
   }
 
-  // Добавить солярики
   async addSolariki(discord, amount) {
     try {
       const { data, error } = await supabase
@@ -270,7 +258,6 @@ class StaffDatabaseSupabase {
     }
   }
 
-  // Снять солярики
   async removeSolariki(discord, amount) {
     try {
       const { data, error } = await supabase

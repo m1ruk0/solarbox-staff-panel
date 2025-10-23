@@ -4,19 +4,40 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Заявка на вывод - SolarBox Staff Panel</title>
+    <style>
+        html, body {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%) !important;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            margin-left: 70px !important;
+        }
+    </style>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="sidebar.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
-<body>
-    <div id="sidebar"></div>
+<body class="dark-theme">
+
+    <!-- Sidebar -->
+    <div class="sidebar" id="sidebar"></div>
+
+    <!-- Toast Container -->
+    <div id="toastContainer" class="toast-container"></div>
 
     <div class="container">
         <div class="header-card">
-            <h1 class="page-title">
-                <i class="fas fa-money-bill-wave mr-3"></i>
-                Заявка на вывод соляриков
-            </h1>
+            <div class="flex items-center justify-between flex-wrap gap-4">
+                <div>
+                    <h1 class="text-4xl font-bold text-gray-800 mb-2">
+                        <i class="fas fa-money-bill-wave text-indigo-600 mr-3"></i>
+                        Заявка на вывод соляриков
+                    </h1>
+                    <p class="text-gray-600">Подайте заявку на вывод ваших соляриков</p>
+                </div>
+            </div>
         </div>
 
         <!-- Баланс -->
@@ -28,10 +49,6 @@
                         <i class="fas fa-sun text-yellow-400 mr-2"></i>
                         <span id="currentBalance">0</span> соляриков
                     </h2>
-                </div>
-                <div class="text-right">
-                    <p class="text-sm text-gray-400">Минимальная сумма вывода:</p>
-                    <p class="text-xl font-bold text-indigo-400">100 соляриков</p>
                 </div>
             </div>
         </div>
@@ -62,11 +79,7 @@
                     <label class="block text-sm font-medium text-gray-400 mb-2">
                         <i class="fas fa-coins mr-2"></i>Количество соляриков
                     </label>
-                    <input type="number" id="amountInput" class="input-field" placeholder="Введите сумму" min="100" required>
-                    <p class="text-xs text-gray-500 mt-2">
-                        <i class="fas fa-info-circle mr-1"></i>
-                        Минимум: 100, Максимум: <span id="maxAmount">0</span>
-                    </p>
+                    <input type="number" id="amountInput" class="input-field" placeholder="Введите сумму" min="1" required>
                 </div>
 
                 <div class="flex gap-4">
@@ -123,7 +136,6 @@
                     if (staff) {
                         currentBalance = staff.solariki || 0;
                         document.getElementById('currentBalance').textContent = currentBalance;
-                        document.getElementById('maxAmount').textContent = currentBalance;
                         document.getElementById('amountInput').max = currentBalance;
                     }
                 }
@@ -132,15 +144,23 @@
             }
         }
 
+        let isSubmitting = false;
+
         async function submitWithdrawal(event) {
             event.preventDefault();
+            
+            // Защита от дюпов
+            if (isSubmitting) {
+                showToast('Подождите, заявка отправляется...', 'error');
+                return;
+            }
             
             const user = JSON.parse(localStorage.getItem('user'));
             const minecraft = document.getElementById('minecraftInput').value.trim();
             const amount = parseInt(document.getElementById('amountInput').value);
             
-            if (amount < 100) {
-                showToast('Минимальная сумма вывода: 100 соляриков', 'error');
+            if (amount < 1) {
+                showToast('Укажите корректную сумму', 'error');
                 return;
             }
             
@@ -148,6 +168,13 @@
                 showToast('Недостаточно соляриков на балансе', 'error');
                 return;
             }
+            
+            // Блокируем кнопку
+            isSubmitting = true;
+            const submitBtn = event.target.querySelector('button[type="submit"]');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Отправка...';
             
             try {
                 const response = await fetch(`${API_URL}/withdrawals`, {
@@ -173,6 +200,13 @@
             } catch (error) {
                 console.error('Ошибка:', error);
                 showToast('Ошибка соединения с сервером', 'error');
+            } finally {
+                // Разблокируем кнопку через 3 секунды
+                setTimeout(() => {
+                    isSubmitting = false;
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = originalText;
+                }, 3000);
             }
         }
 
@@ -248,17 +282,6 @@
             const user = JSON.parse(localStorage.getItem('user'));
             document.getElementById('discordInput').value = user.discord;
             document.getElementById('minecraftInput').value = user.minecraft || '';
-        }
-
-        function showToast(message, type = 'info') {
-            const toast = document.createElement('div');
-            toast.className = `fixed top-4 right-4 px-6 py-4 rounded-lg shadow-lg z-50 ${type === 'success' ? 'bg-green-600' : type === 'error' ? 'bg-red-600' : 'bg-gray-800'} text-white border ${type === 'success' ? 'border-green-500' : type === 'error' ? 'border-red-500' : 'border-gray-600'}`;
-            toast.textContent = message;
-            document.body.appendChild(toast);
-            
-            setTimeout(() => {
-                toast.remove();
-            }, 4000);
         }
     </script>
 </body>

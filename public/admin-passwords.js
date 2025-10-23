@@ -76,10 +76,16 @@ function renderUsers(users) {
                 <p class="text-sm text-gray-600">Вопрос: ${user.question}</p>
                 <p class="text-xs text-gray-500">Создан: ${user.createdAt}</p>
             </div>
-            <button onclick="deleteUser('${user.discord}')" class="btn btn-danger btn-sm">
-                <i class="fas fa-trash mr-2"></i>
-                Удалить
-            </button>
+            <div class="flex gap-2">
+                <button onclick="openEditPasswordModal('${user.discord}', '${user.question}')" class="btn btn-primary btn-sm">
+                    <i class="fas fa-edit mr-2"></i>
+                    Изменить
+                </button>
+                <button onclick="deleteUser('${user.discord}')" class="btn btn-danger btn-sm">
+                    <i class="fas fa-trash mr-2"></i>
+                    Удалить
+                </button>
+            </div>
         </div>
     `).join('');
 }
@@ -163,6 +169,62 @@ async function submitDeleteUser() {
         }
     } catch (error) {
         showToast('Ошибка удаления', 'error');
+    }
+}
+
+// Модальное окно редактирования пароля
+let currentEditUser = '';
+
+function openEditPasswordModal(discord, currentQuestion) {
+    currentEditUser = discord;
+    document.getElementById('editUserDiscord').value = discord;
+    document.getElementById('editUserQuestion').value = currentQuestion;
+    document.getElementById('editUserPassword').value = '';
+    document.getElementById('editUserAnswer').value = '';
+    document.getElementById('editPasswordModal').classList.add('active');
+}
+
+function closeEditPasswordModal() {
+    document.getElementById('editPasswordModal').classList.remove('active');
+    currentEditUser = '';
+    document.getElementById('editUserPassword').value = '';
+    document.getElementById('editUserQuestion').value = '';
+    document.getElementById('editUserAnswer').value = '';
+}
+
+async function submitEditPassword() {
+    const password = document.getElementById('editUserPassword').value;
+    const question = document.getElementById('editUserQuestion').value;
+    const answer = document.getElementById('editUserAnswer').value.trim();
+    
+    if (!password || !question || !answer) {
+        showToast('Заполните все поля!', 'error');
+        return;
+    }
+    
+    try {
+        const response = await fetch(`${API_URL}/admin/passwords/update`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                discord: currentEditUser, 
+                password, 
+                question, 
+                answer 
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            showToast('Пароль и секретное слово обновлены!');
+            closeEditPasswordModal();
+            loadUsers();
+        } else {
+            showToast(data.error, 'error');
+        }
+    } catch (error) {
+        showToast('Ошибка обновления', 'error');
     }
 }
 

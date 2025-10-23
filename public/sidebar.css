@@ -48,11 +48,12 @@ body.dark-theme .sidebar {
     font-weight: 600;
     text-transform: uppercase;
     color: #9ca3af;
-    padding: 0.5rem 0.75rem;
-    margin-bottom: 0.25rem;
     letter-spacing: 0.05em;
+    padding: 0.5rem 0.75rem;
+    margin-top: 1rem;
     white-space: nowrap;
     overflow: hidden;
+    transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 body.dark-theme .sidebar-section-title {
@@ -64,7 +65,7 @@ body.dark-theme .sidebar-section-title {
     align-items: center;
     gap: 0.75rem;
     padding: 0.65rem 0.75rem;
-    margin-bottom: 0.2rem;
+    margin: 0 0 0.2rem 0;
     border-radius: 0.5rem;
     color: #4b5563;
     text-decoration: none;
@@ -73,7 +74,7 @@ body.dark-theme .sidebar-section-title {
     transition: all 0.3s ease;
     position: relative;
     white-space: nowrap;
-    overflow: hidden;
+    overflow: visible;
 }
 
 .sidebar-link i {
@@ -85,8 +86,9 @@ body.dark-theme .sidebar-section-title {
 }
 
 .sidebar .sidebar-link {
-    justify-content: center;
-    padding: 0.65rem 0.75rem;
+    justify-content: flex-start;
+    padding: 0.65rem;
+    padding-left: calc(50% - 10px);
     gap: 0;
 }
 
@@ -94,11 +96,15 @@ body.dark-theme .sidebar-section-title {
     opacity: 0;
     width: 0;
     overflow: hidden;
+    transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1), width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.sidebar .sidebar-link i {
+    flex-shrink: 0;
 }
 
 .sidebar:hover .sidebar-link {
-    justify-content: flex-start;
-    padding: 0.65rem 0.75rem;
+    padding-left: 0.75rem;
     gap: 0.75rem;
 }
 
@@ -133,24 +139,30 @@ body.dark-theme .sidebar-link:hover {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
     transform: none !important;
+    border-radius: 0.75rem;
 }
 
 .sidebar .sidebar-link.active {
-    justify-content: center;
-    padding: 0.65rem 0.75rem;
-    margin: 0.2rem 0.25rem;
+    justify-content: flex-start;
+    padding: 0.75rem;
+    padding-left: calc(50% - 10px);
+    margin: 0.25rem;
     gap: 0;
+    width: calc(100% - 0.5rem);
+}
+
+.sidebar .sidebar-link.active i {
+    font-size: 1rem;
 }
 
 .sidebar .sidebar-link.active span {
     opacity: 0;
     width: 0;
+    transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1), width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .sidebar:hover .sidebar-link.active {
-    justify-content: flex-start;
-    padding: 0.65rem 0.75rem;
-    margin: 0 0 0.2rem 0;
+    padding-left: 0.75rem;
     gap: 0.75rem;
 }
 
@@ -177,13 +189,14 @@ body.dark-theme .sidebar-link:hover {
 }
 
 .sidebar-link-badge {
-    margin-left: auto;
     background: #ef4444;
     color: white;
     font-size: 0.75rem;
     padding: 0.125rem 0.5rem;
     border-radius: 1rem;
     font-weight: 600;
+    margin-left: auto;
+    flex-shrink: 0;
 }
 
 .sidebar-footer {
@@ -344,8 +357,7 @@ body.dark-theme .sidebar-user-solariki {
 /* Скрываем текст когда сайдбар свернут - текст выезжает */
 .sidebar .sidebar-section-title,
 .sidebar .sidebar-link span,
-.sidebar .sidebar-balance span,
-.sidebar .sidebar-link-badge {
+.sidebar .sidebar-balance span {
     opacity: 0;
     transform: translateX(-10px);
     transition: opacity 0.2s ease, transform 0.3s ease;
@@ -354,12 +366,36 @@ body.dark-theme .sidebar-user-solariki {
 
 .sidebar:hover .sidebar-section-title,
 .sidebar:hover .sidebar-link span,
-.sidebar:hover .sidebar-balance span,
-.sidebar:hover .sidebar-link-badge {
+.sidebar:hover .sidebar-balance span {
     opacity: 1;
     transform: translateX(0);
     transition: opacity 0.3s ease 0.1s, transform 0.3s ease 0.1s;
     pointer-events: auto;
+}
+
+/* Badge всегда видим */
+.sidebar .sidebar-link-badge {
+    position: absolute;
+    right: 4px;
+    top: 4px;
+    min-width: 16px;
+    height: 16px;
+    padding: 0;
+    font-size: 0.6rem;
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    opacity: 1 !important;
+    transform: none !important;
+    pointer-events: auto !important;
+}
+
+.sidebar:hover .sidebar-link-badge {
+    position: static;
+    min-width: 20px;
+    height: 20px;
+    padding: 0.125rem 0.5rem;
+    font-size: 0.75rem;
 }
 
 .sidebar .sidebar-footer {

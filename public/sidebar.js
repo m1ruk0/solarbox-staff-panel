@@ -128,6 +128,7 @@ function createSidebar() {
                     <a href="bugs-admin.html" class="sidebar-link ${currentPage === 'bugs-admin.html' ? 'active' : ''}" id="bugsAdminLink" style="display: none;">
                         <i class="fas fa-list"></i>
                         <span>История багов</span>
+                        <span class="sidebar-link-badge" id="newBugsBadge" style="display: none;">0</span>
                     </a>
                 </div>
                 
@@ -165,6 +166,12 @@ function createSidebar() {
     
     // Загружаем количество отчетов на рассмотрении
     loadPendingReportsCount();
+    
+    // Загружаем количество заявок на вывод
+    loadPendingWithdrawalsCount();
+    
+    // Загружаем количество новых багов
+    loadNewBugsCount();
 }
 
 // Переключение сайдбара
@@ -275,6 +282,54 @@ async function loadPendingReportsCount() {
         }
     } catch (error) {
         console.log('Не удалось загрузить количество отчетов');
+    }
+}
+
+// Загрузка количества заявок на вывод на рассмотрении
+async function loadPendingWithdrawalsCount() {
+    try {
+        const API_URL = window.location.protocol === 'file:' 
+            ? 'http://localhost:4000/api' 
+            : window.location.origin + '/api';
+            
+        const response = await fetch(`${API_URL}/withdrawals`);
+        const data = await response.json();
+        
+        if (data.success) {
+            const pending = data.data.filter(w => w.status === 'pending').length;
+            
+            const badge = document.getElementById('pendingWithdrawalsBadge');
+            if (badge && pending > 0) {
+                badge.textContent = pending;
+                badge.style.display = 'block';
+            }
+        }
+    } catch (error) {
+        console.log('Не удалось загрузить количество заявок на вывод');
+    }
+}
+
+// Загрузка количества новых багов
+async function loadNewBugsCount() {
+    try {
+        const API_URL = window.location.protocol === 'file:' 
+            ? 'http://localhost:4000/api' 
+            : window.location.origin + '/api';
+            
+        const response = await fetch(`${API_URL}/bugs`);
+        const data = await response.json();
+        
+        if (data.success) {
+            const newBugs = data.data.filter(b => b.status === 'new').length;
+            
+            const badge = document.getElementById('newBugsBadge');
+            if (badge && newBugs > 0) {
+                badge.textContent = newBugs;
+                badge.style.display = 'block';
+            }
+        }
+    } catch (error) {
+        console.log('Не удалось загрузить количество багов');
     }
 }
 
